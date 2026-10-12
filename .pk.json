@@ -1,0 +1,81 @@
+{
+  "$schema": "https://plankit.com/pk.schema.json",
+  "changelog": {
+    "hooks": {},
+    "types": [
+      {
+        "section": "Added",
+        "type": "feat"
+      },
+      {
+        "section": "Fixed",
+        "type": "fix"
+      },
+      {
+        "section": "Deprecated",
+        "type": "deprecate"
+      },
+      {
+        "section": "Removed",
+        "type": "revert"
+      },
+      {
+        "section": "Security",
+        "type": "security"
+      },
+      {
+        "section": "Changed",
+        "type": "refactor"
+      },
+      {
+        "section": "Changed",
+        "type": "perf"
+      },
+      {
+        "section": "Documentation",
+        "type": "docs"
+      },
+      {
+        "section": "Maintenance",
+        "type": "chore"
+      },
+      {
+        "section": "Maintenance",
+        "type": "test"
+      },
+      {
+        "section": "Maintenance",
+        "type": "build"
+      },
+      {
+        "section": "Maintenance",
+        "type": "ci"
+      },
+      {
+        "section": "Maintenance",
+        "type": "style"
+      },
+      {
+        "hidden": true,
+        "section": "Plans",
+        "type": "plan"
+      }
+    ]
+  },
+  "guard": {
+    "branches": [
+      "main"
+    ],
+    "breaking": "ask",
+    "mode": "block",
+    "push": "block"
+  },
+  "preserve": {
+    "dir": "docs/plans",
+    "mode": "manual"
+  },
+  "release": {
+    "branch": "main",
+    "hooks": {}
+  }
+}

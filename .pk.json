@@ -1,7 +1,10 @@
 {
   "$schema": "https://plankit.com/pk.schema.json",
   "changelog": {
-    "hooks": {},
+    "hooks": {
+      "postVersion": "node tools/package-versions.mjs \"$VERSION\"",
+      "preCommit": "git add packages/6502/package.json packages/charset/package.json packages/c64/package.json packages/apple2e/package.json"
+    },
     "types": [
       {
         "section": "Added",
@@ -59,6 +62,28 @@
         "hidden": true,
         "section": "Plans",
         "type": "plan"
+      }
+    ],
+    "versionFiles": [
+      {
+        "path": "package.json",
+        "type": "json"
+      },
+      {
+        "path": "packages/6502/package.json",
+        "type": "json"
+      },
+      {
+        "path": "packages/charset/package.json",
+        "type": "json"
+      },
+      {
+        "path": "packages/c64/package.json",
+        "type": "json"
+      },
+      {
+        "path": "packages/apple2e/package.json",
+        "type": "json"
       }
     ]
   },

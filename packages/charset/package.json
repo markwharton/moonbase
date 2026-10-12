@@ -1,6 +1,6 @@
 {
   "name": "@moonbase/charset",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Moonbase's own character set for the Commodore 64, and the 5 by 7 font it and the Apple IIe's text screen are drawn from.",
   "type": "module",
   "license": "MIT",

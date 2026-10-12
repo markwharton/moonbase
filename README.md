@@ -18,7 +18,14 @@ import { C64 } from '@moonbase/c64/machine.js';
 import { CPU } from '@moonbase/6502/cpu.js';
 ```
 
-`npm install` links the packages to each other; `npm test` runs their tests.
+`npm install` links the packages to each other; `npm test` runs their tests; `npm run build`
+makes each package one file, `packages/<name>/dist/moonbase-<name>.js`, minified, with its source
+map: the others it uses imported by name (`@moonbase/6502`), so a page maps each name to its file:
+
+```html
+<script type="importmap">{"imports": {"@moonbase/6502": "/lib/moonbase-6502.js", "@moonbase/charset": "/lib/moonbase-charset.js", "@moonbase/c64": "/lib/moonbase-c64.js"}}</script>
+<script type="module">import { machine } from '@moonbase/c64';</script>
+```
 
 MIT, (c) 2026 Mark Wharton: see LICENSE, and each package's own. The titles, their disks and
 their pictures are not here and are not under this licence.

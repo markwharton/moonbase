@@ -11,6 +11,10 @@
     "packages/apple2e"
   ],
   "scripts": {
-    "test": "node --test packages/*/test/*.test.js"
+    "test": "node --test packages/*/test/*.test.js",
+    "build": "node tools/package-files.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@moonbase/c64",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Commodore 64 as far as the games use it: the VIC-II, the SID, a 1541, a printer, and Moonbase's own KERNAL and BASIC in place of Commodore's ROMs.",
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,7 @@
     "./*": "./*"
   },
   "dependencies": {
-    "@moonbase/6502": "0.1.0",
-    "@moonbase/charset": "0.1.0"
+    "@moonbase/6502": "0.2.0",
+    "@moonbase/charset": "0.2.0"
   }
 }

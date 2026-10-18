@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.6.0] - 2026-10-18
+
+### Added
+
+- Applesoft shapes and the VIC-II's pictures for tools (e73659a)
+- the vector engine as a package (7efbce8)
+
 ## [v0.5.1] - 2026-10-18
 
 ### Fixed
@@ -59,3 +66,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 [v0.4.1]: https://github.com/markwharton/moonbase/compare/v0.4.0...v0.4.1
 [v0.5.0]: https://github.com/markwharton/moonbase/compare/v0.4.1...v0.5.0
 [v0.5.1]: https://github.com/markwharton/moonbase/compare/v0.5.0...v0.5.1
+[v0.6.0]: https://github.com/markwharton/moonbase/compare/v0.5.1...v0.6.0

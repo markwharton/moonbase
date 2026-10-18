@@ -1,6 +1,6 @@
 {
   "name": "@moonbase-machines/files",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "The formats the machines' files come in and go out as, in Node: PNG written and read, and zip read.",
   "type": "module",
   "license": "MIT",

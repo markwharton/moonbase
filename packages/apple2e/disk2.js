@@ -22,6 +22,10 @@
 // DOS's timed loops find the bytes where they expect them. A nibble read once shows its high bit;
 // read again before the next arrives, it does not, as the latch would still be shifting in the
 // next. Writing puts each byte written in write mode at the head and moves on a nibble.
+//
+// The card says when a disk has been written, for what is kept of it to be read off it (saves.js): when the
+// motor is switched off after a write, as DOS 3.3 and ProDOS switch it off at the end of every call, each of
+// `onWritten(n => …)` is told the drive, 0 or 1, whose disk was written.
 
 // DOS 3.3's logical sector to its physical one
 export const SKEW = [0, 13, 11, 9, 7, 5, 3, 1, 14, 12, 10, 8, 6, 4, 2, 15];
@@ -109,7 +113,7 @@ export function image(tracks, order = SKEW) {
 
 // a drive: its disk as tracks, and where its head is, in half tracks
 class Drive {
-  constructor() { this.tracks = null; this.half = 0; this.protect = false; this.out = false; }
+  constructor() { this.tracks = null; this.half = 0; this.protect = false; this.out = false; this.written = false; }
   insert(image, { protect = false, order } = {}) { this.tracks = image ? Array.from({ length: TRACKS }, (_, t) => track(image, t, { order })) : null; this.protect = protect; }
   // the track under the head: none while the disk is out of the drive (`out`), kept as written
   get track() { return this.out ? null : this.tracks?.[this.half >> 1]; }
@@ -125,6 +129,7 @@ export class Disk2 {
     this.head = -1;    // in write mode, where the next byte written goes
   }
   insert(n, image, opts) { this.drives[n].insert(image, opts); }
+  onWritten(f) { (this.listeners ??= []).push(f); }
 
   io(n, v) {
     const d = this.drives[this.drive];
@@ -133,7 +138,10 @@ export class Disk2 {
       // so the next magnet round moves it a half track in, the one before a half track out
       if (n & 1) { const step = ((n >> 1) - d.half % 4 + 4) % 4; d.half = Math.max(0, Math.min(TRACKS * 2 - 2, d.half + (step === 1) - (step === 3))); }
     } else switch (n) {
-      case 8: if (this.motor) { this.motor = 0; this.stops = this.clock() + MOTOR_OFF; } break;
+      case 8:
+        if (this.motor) { this.motor = 0; this.stops = this.clock() + MOTOR_OFF; }
+        this.drives.forEach((x, k) => { if (x.written) { x.written = false; for (const f of this.listeners ?? []) f(k); } });
+        break;
       case 9: this.motor = 1; break;
       case 10: this.drive = 0; break;
       case 11: this.drive = 1; break;
@@ -147,7 +155,7 @@ export class Disk2 {
       if (v !== undefined && this.q6 && d.track && !d.protect) {
         const t = d.track;
         if (this.head < 0) this.head = Math.floor(this.clock() / NIBBLE) % t.length;
-        t[this.head] = v; this.head = (this.head + 1) % t.length;
+        t[this.head] = v; this.head = (this.head + 1) % t.length; d.written = true;
       }
       return 0;
     }

@@ -46,6 +46,8 @@ export class Files {
   remove(path) { if (this.files.delete(path)) this.changed(); }
   onChange(f) { (this.listeners ??= []).push(f); }
   changed() { for (const f of this.listeners ?? []) f(); }
+  // a volume's files, as the player's disk keeps them (saves.js): [{ path, type, aux, body }]
+  of(volume) { return [...this.files.values()].filter(f => f.volume.toUpperCase() === volume); }
 
   // a file by its name: a full path from a volume, or one under the prefix; a DOS 3.3 name as it is
   file(name) {

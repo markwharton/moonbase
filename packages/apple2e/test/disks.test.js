@@ -1,12 +1,16 @@
 // The Apple's disks and screens read, from bytes the tests build, nothing of a title's: a DOS 3.3 disk with a binary
 // file and an Applesoft program; a ProDOS volume, in block order and in DOS order, with a file whose end is past its
-// block and an Integer BASIC file; a hi-res screen as a picture; an Applesoft program listed.
+// block and an Integer BASIC file; a file saved on each, saved over and deleted; a hi-res screen as a picture; an
+// Applesoft program listed.
 //
 //   node --test test/*.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dos33 } from '@moonbase-machines/apple2e/dos33-disk.js';
-import { prodos } from '@moonbase-machines/apple2e/prodos-disk.js';
+import { dos33, save as saveDos33, remove as removeDos33 } from '@moonbase-machines/apple2e/dos33-disk.js';
+import { prodos, save as saveProdos, remove as removeProdos } from '@moonbase-machines/apple2e/prodos-disk.js';
+import { blank } from '@moonbase-machines/apple2e/prodos.js';
+import { track, image, PRODOS, TRACKS } from '@moonbase-machines/apple2e/disk2.js';
+import { emptyDos33 } from './empty-dos33.js';
 import { picture, rows } from '@moonbase-machines/apple2e/hires-picture.js';
 import { paintHires } from '@moonbase-machines/apple2e/screen.js';
 import { list } from '@moonbase-machines/apple2e/applesoft-list.js';
@@ -45,6 +49,47 @@ function volume(blocks = 16) {
   v.fill(0x41, 5 * 512, 6 * 512); v.set([1, 2, 3], 6 * 512);
   return v;
 }
+
+const freeSectors = disk => { let n = 0; for (let i = 0; i < 35 * 4; i++) for (let v = disk[17 * 16 * 256 + 0x38 + i]; v; v >>= 1) n += v & 1; return n; };
+
+test('a binary file saved on a DOS 3.3 disk reads back at its address, is saved over, and deleted frees its sectors', () => {
+  const disk = emptyDos33(), free = freeSectors(disk);
+  saveDos33(disk, { name: 'PO8:CAMP.SAV', address: 0x240, body: Uint8Array.from([1, 2, 3]) });
+  let f = dos33(disk).files[0];
+  assert.deepEqual([f.name, f.type, f.address, f.sectors, [...f.body]], ['PO8:CAMP.SAV', 'B', 0x240, 2, [1, 2, 3]]);
+  assert.equal(freeSectors(disk), free - 2, 'its list and its one sector taken');
+  // saved over, longer than a list holds: two lists, its bytes all there
+  const long = Uint8Array.from({ length: 123 * 256 }, (_, i) => i * 7 & 0xff);
+  saveDos33(disk, { name: 'PO8:CAMP.SAV', address: 0x4000, body: long });
+  assert.equal(dos33(disk).files.length, 1, 'in place of the old');
+  f = dos33(disk).files[0];
+  assert.deepEqual([f.address, f.sectors], [0x4000, 2 + 124]);
+  assert.ok(f.body.every((v, i) => v === long[i]) && f.body.length === long.length, 'every byte');
+  assert.equal(removeDos33(disk, 'PO8:CAMP.SAV'), true);
+  assert.deepEqual(dos33(disk).files, []);
+  assert.equal(freeSectors(disk), free, 'every sector free again');
+  assert.equal(removeDos33(disk, 'PO8:CAMP.SAV'), false);
+});
+
+test('a file saved on a blank ProDOS volume, in one block and with an index, reads back; saved over and destroyed', () => {
+  const volume = blank('SAVES');
+  const dosOrder = () => image(Array.from({ length: TRACKS }, (_, t) => track(volume, t, { order: PRODOS })));
+  saveProdos(volume, { name: 'SAM', type: 0x12, aux: 0x4000, body: Uint8Array.from([7, 8, 9]) });
+  const big = Uint8Array.from({ length: 2000 }, (_, i) => i & 0xff);
+  saveProdos(volume, { name: 'BIG', type: 0x06, aux: 0x2000, body: big });
+  let files = prodos(dosOrder()).files;
+  assert.deepEqual(files.map(f => [f.name, f.type, f.aux, f.storage, f.blocks]), [['SAM', 0x12, 0x4000, 1, 1], ['BIG', 0x06, 0x2000, 2, 5]]);
+  assert.deepEqual([...files[0].body], [7, 8, 9]);
+  assert.ok(files[1].body.every((v, i) => v === big[i]) && files[1].body.length === 2000);
+  saveProdos(volume, { name: 'SAM', type: 0x12, aux: 0x4000, body: Uint8Array.from([1]) });
+  assert.deepEqual([...prodos(dosOrder()).files.find(f => f.name === 'SAM').body], [1], 'saved over');
+  assert.equal(removeProdos(volume, 'BIG'), true);
+  assert.equal(removeProdos(volume, 'SAM'), true);
+  assert.deepEqual(prodos(dosOrder()).files, []);
+  // (as DESTROY leaves it: the blocks free again and the directory empty, the bytes in the blocks as they were)
+  const was = blank('SAVES'), dir = v => v.subarray(2 * 512, 7 * 512);
+  assert.ok(dir(volume).every((v, i) => v === dir(was)[i]), 'the directory and the bitmap as blank as they were');
+});
 
 test('a ProDOS volume: a file past its blocks reads as zeros to its end, an Integer BASIC file is INT', () => {
   const { volume: name, files } = prodos(volume());

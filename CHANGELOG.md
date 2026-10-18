@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.6.1] - 2026-10-18
+
+### Fixed
+
+- each package's own file built when it is published (9141d18)
+
 ## [v0.6.0] - 2026-10-18
 
 ### Added
@@ -67,3 +73,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 [v0.5.0]: https://github.com/markwharton/moonbase/compare/v0.4.1...v0.5.0
 [v0.5.1]: https://github.com/markwharton/moonbase/compare/v0.5.0...v0.5.1
 [v0.6.0]: https://github.com/markwharton/moonbase/compare/v0.5.1...v0.6.0
+[v0.6.1]: https://github.com/markwharton/moonbase/compare/v0.6.0...v0.6.1

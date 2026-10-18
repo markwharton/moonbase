@@ -5,7 +5,9 @@
   "type": "module",
   "license": "MIT",
   "author": "Mark Wharton",
-  "engines": { "node": ">=22.12" },
+  "engines": {
+    "node": ">=22.12"
+  },
   "exports": {
     ".": "./index.js",
     "./*": "./*"

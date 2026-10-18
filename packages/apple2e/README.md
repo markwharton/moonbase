@@ -1,6 +1,6 @@
 # @moonbase-machines/apple2e
 
-An Apple IIe with 128K as far as the games use it: the 6502 (`@moonbase-machines/6502`), double hi-res and
+An Apple IIe with 128K as far as the games use it: the 6502 (`@moonbase-machines/mos6502`), double hi-res and
 its sixteen colours, the Disk II and a block card for 3.5" disks, ProDOS's calls answered from a
 game's files, and Moonbase's own ROM routines in place of Apple's, so that nothing of Apple's is
 needed to run.

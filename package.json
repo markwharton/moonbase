@@ -5,7 +5,7 @@
   "description": "Moonbase's machines: a 6502, a Commodore 64 and an Apple IIe, for the browser and Node",
   "license": "MIT",
   "workspaces": [
-    "packages/6502",
+    "packages/mos6502",
     "packages/charset",
     "packages/files",
     "packages/c64",

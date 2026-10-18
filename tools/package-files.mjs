@@ -1,8 +1,8 @@
-// One file a package: packages/<name>/dist/moonbase-<name>.js for @moonbase-machines/6502, charset, c64 and
+// One file a package: packages/<name>/dist/moonbase-<name>.js for @moonbase-machines/mos6502, charset, c64 and
 // apple2e, built by esbuild: the package's own modules, each a namespace of the file's exports as its
 // index.js has them, minified, with a source map and the MIT notice; the other packages it uses
-// imported by name ('@moonbase-machines/6502'), from their own files. A module of another package,
-// '@moonbase-machines/6502/cpu.js', is answered from that package's file, its namespace there.
+// imported by name ('@moonbase-machines/mos6502'), from their own files. A module of another package,
+// '@moonbase-machines/mos6502/cpu.js', is answered from that package's file, its namespace there.
 //
 //   node tools/package-files.mjs                  the four files
 //
@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url).pathname;
-export const PACKAGES = ['6502', 'charset', 'c64', 'apple2e'];   // (files is Node's alone: no file of its own for a page)
+export const PACKAGES = ['mos6502', 'charset', 'c64', 'apple2e'];   // (files is Node's alone: no file of its own for a page)
 const pkg = name => JSON.parse(readFileSync(join(root, 'packages', name, 'package.json'), 'utf8'));
 export const MIT = name => `/*! @moonbase-machines/${name} ${pkg(name).version}: MIT, (c) 2026 Mark Wharton (its LICENSE) */`;
 export const common = { bundle: true, format: 'esm', minify: true, sourcemap: 'linked', target: 'es2022', logLevel: 'warning', legalComments: 'inline' };

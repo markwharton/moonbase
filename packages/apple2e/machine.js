@@ -10,7 +10,7 @@
 // $C100 to $FFFF as the IIe's switches choose, the cards sit in their slots, and the processor
 // starts at the reset vector, so the ROM boots the disk as a school's Apple did. None of the
 // answers above is installed then. The IIe's 6502 is the NMOS part, as the C64's is.
-import { CPU } from '@moonbase-machines/6502/cpu.js';
+import { CPU } from '@moonbase-machines/mos6502/cpu.js';
 import { install as installRom } from './rom.js';
 import { Files, BLOCK } from './mli.js';
 import { Disk2 } from './disk2.js';

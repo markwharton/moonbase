@@ -10,7 +10,7 @@
     "./*": "./*"
   },
   "dependencies": {
-    "@moonbase-machines/6502": "0.4.1",
+    "@moonbase-machines/mos6502": "0.4.1",
     "@moonbase-machines/charset": "0.4.1",
     "@moonbase-machines/files": "0.4.1"
   },

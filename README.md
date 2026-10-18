@@ -5,7 +5,7 @@ The machines Mark Wharton's titles of 1985 to 1995 run on again, in the browser 
 
 | Package | What it is |
 |---|---|
-| [`@moonbase-machines/6502`](packages/6502) | The 6502: its documented instructions, an assembler and a disassembler. |
+| [`@moonbase-machines/mos6502`](packages/mos6502) | The 6502: its documented instructions, an assembler and a disassembler. |
 | [`@moonbase-machines/files`](packages/files) | The formats the machines' files come in and go out as, in Node: PNG written and read, and zip read. |
 | [`@moonbase-machines/charset`](packages/charset) | Moonbase's own character set for the Commodore 64, and the 5 by 7 font it and the Apple IIe's text screen are drawn from. |
 | [`@moonbase-machines/c64`](packages/c64) | A Commodore 64 as far as the games use it: the VIC-II, the SID, a 1541, a printer, and Moonbase's own KERNAL and BASIC in place of Commodore's ROMs. |
@@ -16,15 +16,15 @@ needed or kept here. Every module opens with a comment saying what it is and wha
 
 ```js
 import { C64 } from '@moonbase-machines/c64/machine.js';
-import { CPU } from '@moonbase-machines/6502/cpu.js';
+import { CPU } from '@moonbase-machines/mos6502/cpu.js';
 ```
 
 `npm install` links the packages to each other; `npm test` runs their tests; `npm run build`
 makes each package one file, `packages/<name>/dist/moonbase-<name>.js`, minified, with its source
-map: the others it uses imported by name (`@moonbase-machines/6502`), so a page maps each name to its file:
+map: the others it uses imported by name (`@moonbase-machines/mos6502`), so a page maps each name to its file:
 
 ```html
-<script type="importmap">{"imports": {"@moonbase-machines/6502": "/lib/moonbase-6502.js", "@moonbase-machines/charset": "/lib/moonbase-charset.js", "@moonbase-machines/c64": "/lib/moonbase-c64.js"}}</script>
+<script type="importmap">{"imports": {"@moonbase-machines/mos6502": "/lib/moonbase-mos6502.js", "@moonbase-machines/charset": "/lib/moonbase-charset.js", "@moonbase-machines/c64": "/lib/moonbase-c64.js"}}</script>
 <script type="module">import { machine } from '@moonbase-machines/c64';</script>
 ```
 

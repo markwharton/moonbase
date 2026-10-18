@@ -1,5 +1,5 @@
 {
-  "name": "@moonbase-machines/6502",
+  "name": "@moonbase-machines/mos6502",
   "version": "0.4.1",
   "description": "The 6502: its documented instructions, an assembler and a disassembler.",
   "type": "module",

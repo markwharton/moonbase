@@ -5,7 +5,7 @@
 //   node --test test/*.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CPU } from '@moonbase-machines/6502/cpu.js';
+import { CPU } from '@moonbase-machines/mos6502/cpu.js';
 
 // [opcode, A, operand, P before, A after, P after (NV-DIZC: bits 4 and 5 are not a register)]
 const CHIP = [

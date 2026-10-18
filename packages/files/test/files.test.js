@@ -22,6 +22,8 @@ test('a PNG of RGBA bytes reads back as the same picture as its rows', () => {
   const rgba = new Uint8Array([10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 1, 2, 3, 255]);
   const p = readPng(pngOfRGBA(rgba, 2, 2));
   assert.deepEqual([p.at(0, 0), p.at(1, 0), p.at(0, 1), p.at(1, 1)], ['0a141e', '28323c', '46505a', '010203']);
+  const rows = [[[10, 20, 30], [40, 50, 60]], [[70, 80, 90], [1, 2, 3]]];
+  assert.deepEqual(pngOfRGBA(rgba, 2, 2, { alpha: false }), png(rows), 'without its alpha, the same bytes as the rows\' PNG');
 });
 
 test('a sheet lays pictures out with gray between, the smaller padded to the largest', () => {

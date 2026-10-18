@@ -11,6 +11,7 @@ import { picture, rows } from '@moonbase-machines/apple2e/hires-picture.js';
 import { paintHires } from '@moonbase-machines/apple2e/screen.js';
 import { list } from '@moonbase-machines/apple2e/applesoft-list.js';
 import { readPng } from '@moonbase-machines/files/png-read.js';
+import { png } from '@moonbase-machines/files/png.js';
 
 const name30 = s => [...s.padEnd(30)].map(c => c.charCodeAt(0) | 0x80);
 
@@ -75,6 +76,7 @@ test('a hi-res screen as a picture is the machine\'s own drawing of it, 560 by 3
     assert.equal(p.at(x, y), hex, `at ${x}, ${y}`);
   }
   assert.deepEqual(rows(page)[0][0], [own[0], own[1], own[2]]);
+  assert.deepEqual(picture(page), png(rows(page)), 'RGB, byte for byte the PNG of its rows');
 });
 
 test('an Applesoft program listed: keywords spaced, a string and REM as written, a control character named', () => {

@@ -2,7 +2,8 @@
 // [r, g, b, a] (with its alpha), or from RGBA bytes as a canvas or the machines' screens give them.
 //
 //   png(rows)                        a PNG's bytes from rows of [r, g, b] or [r, g, b, a]
-//   pngOfRGBA(rgba, width, height)   a PNG's bytes from RGBA bytes, four a pixel, row by row
+//   pngOfRGBA(rgba, width, height, { alpha })   a PNG's bytes from RGBA bytes, four a pixel, row by row; alpha
+//                                    false, written as RGB, its alpha left out (a picture with none to show)
 //   sheet(pictures, { across, gap, scale })   pictures (rows) on one sheet, `gap` gray dots between
 //   padded(pictures, fill)           pictures of different sizes padded to the largest, top left
 import { deflateSync } from 'node:zlib';
@@ -30,10 +31,10 @@ export function png(pixels) {
   return encode(raw, w, h, n);
 }
 
-export function pngOfRGBA(rgba, w, h) {
-  const raw = Buffer.alloc(h * (w * 4 + 1));
-  for (let y = 0; y < h; y++) raw.set(rgba.subarray(y * w * 4, (y + 1) * w * 4), y * (w * 4 + 1) + 1);
-  return encode(raw, w, h, 4);
+export function pngOfRGBA(rgba, w, h, { alpha = true } = {}) {
+  const n = alpha ? 4 : 3, raw = Buffer.alloc(h * (w * n + 1));
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) raw.set(rgba.subarray((y * w + x) * 4, (y * w + x) * 4 + n), y * (w * n + 1) + 1 + x * n);
+  return encode(raw, w, h, n);
 }
 
 // Pictures scaled by `scale`, with `gap` gray dots between them, `across` to a row.

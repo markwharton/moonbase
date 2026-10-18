@@ -24,9 +24,9 @@ const WAITS = Array.from({ length: 256 }, (_, a) => {
   }
   return n + 6;
 });
-const rowBase = r => 0x400 + 0x80 * (r % 8) + 0x28 * ((r / 8) | 0);
-
 import { applesoft } from './hires.js';
+import { walk } from './shapes.js';
+import { textRow as rowBase } from './screen.js';
 
 export function install(m) {
   const c = m.cpu, z = a => c.read(a), zw = (a, v) => c.write(a, v);
@@ -163,35 +163,22 @@ export function install(m) {
   // the position and the dot, for a shape: HPOSN and HPLOT1 as Applesoft's
   function hposn(x, y) { c.a = y & 0xff; c.x = x & 0xff; c.y = x >> 8 & 0xff; hi.hposn(); }
   const hplot = () => hi.hplot1();
-  // a shape: pairs of three-bit vectors, a bit to plot and two of direction, turned by the
-  // rotation and repeated by the scale; a zero byte ends it
+  // a shape (shapes.js walks it: its vectors, turned by the rotation and repeated by the scale), each dot it
+  // plots on the screen as DRAW plots it, or turned over as XDRAW does
   function draw(rot, xor) {
-    let at = z(0x1a) | z(0x1b) << 8, x = z(0xe0) | z(0xe1) << 8, y = z(0xe2);
     const [hx, hxh, hy] = [z(0xe0), z(0xe1), z(0xe2)];
     zw(0xea, 0);   // the collisions counted afresh ($F622)
-    const scale = z(0xe7) || 256;
-    const dir = [[0, -1], [1, 0], [0, 1], [-1, 0]];
     zw(0xf9, rot);
-    const step = (d, plot) => {
-      const [ddx, ddy] = dir[(d + (rot >> 4)) & 3];
-      for (let s = 0; s < scale; s++) {
-        if (plot && x >= 0 && x < 280 && y >= 0 && y < 192) {
-          hposn(x, y);
-          const at = (z(0x26) | z(0x27) << 8) + z(0xe5), mask = z(0x30) & 0x7f;
-          // the collisions, HCOUNT ($EA): XDRAW counts a dot it turns on, that was off ($F4A3);
-          // DRAW a dot already in the color ($F4BA)
-          if (xor ? !(c.read(at) & mask) : !((c.read(at) ^ z(0x1c)) & z(0x30))) zw(0xea, z(0xea) + 1);
-          if (xor) zw(at, c.read(at) ^ mask); else hplot();
-        }
-        x += ddx; y += ddy;
-      }
+    const dot = (x, y) => {
+      if (x < 0 || x >= 280 || y < 0 || y >= 192) return;
+      hposn(x, y);
+      const at = (z(0x26) | z(0x27) << 8) + z(0xe5), mask = z(0x30) & 0x7f;
+      // the collisions, HCOUNT ($EA): XDRAW counts a dot it turns on, that was off ($F4A3);
+      // DRAW a dot already in the color ($F4BA)
+      if (xor ? !(c.read(at) & mask) : !((c.read(at) ^ z(0x1c)) & z(0x30))) zw(0xea, z(0xea) + 1);
+      if (xor) zw(at, c.read(at) ^ mask); else hplot();
     };
-    for (let guard = 0; guard < 4096; guard++) {
-      const b = c.read(at++);
-      if (b === 0) break;
-      const v = [b & 7, (b >> 3) & 7, (b >> 6) & 3];
-      for (let i = 0; i < 3; i++) { const bits = v[i]; if (bits === 0 && (i === 2 || (i === 1 && v[2] === 0))) break; step(bits & 3, bits & 4); }
-    }
+    const { x, y } = walk(c.read.bind(c), z(0x1a) | z(0x1b) << 8, { x: hx | hxh << 8, y: hy, rot, scale: z(0xe7), dot });
     // DRAW moves only the byte, column and mask it plots by (HBASL, HORIZ, HMASK): HNDX and HNDY
     // stay where the shape began, and HPLOT TO goes on from there, as Detect-A-Pet's name entry
     // puts its cursor after the last letter from them

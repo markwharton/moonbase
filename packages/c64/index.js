@@ -19,6 +19,7 @@ export * as machine from './machine.js';
 export * as numbers from './numbers.js';
 export * as paint from './paint.js';
 export * as petscii from './petscii.js';
+export * as picture from './picture.js';
 export * as printer from './printer.js';
 export * as rom from './rom.js';
 export * as saves from './saves.js';

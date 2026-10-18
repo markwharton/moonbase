@@ -33,3 +33,26 @@ test('a BASIC program listed as LIST prints it, in either character set', () => 
   assert.equal(listing(Uint8Array.from(bytes)), '10 PRINT"{CLR}HELLO"\n20 GOTO 10\n');
   assert.equal(listing(Uint8Array.from(bytes), { lower: true }), '10 print"{CLR}hello"\n20 goto 10\n');
 });
+
+test('what the VIC-II shows as a picture: multicolour and hi-res text, a hi-res bitmap, a sprite', async () => {
+  const { rows, chip } = await import('@moonbase-machines/c64/picture.js');
+  const { PALETTE } = await import('@moonbase-machines/c64/vic.js');
+  const colours = row => row.map(c => PALETTE.findIndex(p => p.join() === c.join()));
+  // text: characters at $3000, the screen at $0400 ($D018 $1C); cell 0 multicolour (colour 8 + 5), its top row the
+  // pairs 00 01 10 11; cell 1 hi-res in white, its top row one dot at the left
+  let mem = new Uint8Array(0x10000);
+  mem[0x400] = 0; mem[0x401] = 1; mem[0x3000] = 0b00011011; mem[0x3008] = 0x80;
+  let io = chip({ registers: { 0x11: 0x1b, 0x16: 0xd8, 0x18: 0x1c, 0x21: 0, 0x22: 2, 0x23: 7 }, color: [8 | 5, 1] });
+  assert.deepEqual(colours(rows({ mem, chip: io, crop: [0, 0, 10, 1] })[0]), [0, 0, 2, 2, 7, 7, 5, 5, 1, 0]);
+  // a hi-res bitmap at $2000 ($D018 $18, $D011 $3B): its first byte one dot, the screen's byte $16 (white on blue)
+  mem = new Uint8Array(0x10000); mem[0x2000] = 0x80; mem[0x400] = 0x16;
+  io = chip({ registers: { 0x11: 0x3b, 0x16: 0xc8, 0x18: 0x18 } });
+  assert.deepEqual(colours(rows({ mem, chip: io, crop: [0, 0, 3, 1] })[0]), [1, 6, 6]);
+  // sprite 0 at the screen's top left (24, 50), its data at $2000 (pointer $80 at $07F8), its first dot in red
+  mem = new Uint8Array(0x10000); mem[0x7f8] = 0x80; mem[0x2000] = 0x80;
+  io = chip({ registers: { 0x11: 0x1b, 0x16: 0xc8, 0x18: 0x14, 0x15: 1, 0x00: 24, 0x01: 50, 0x27: 2, 0x21: 0 } });
+  assert.deepEqual(colours(rows({ mem, chip: io, crop: [0, 0, 2, 1] })[0]), [2, 0]);
+  // twice the size: each pixel twice across and twice down
+  const big = rows({ mem, chip: io, crop: [0, 0, 1, 1], scale: 2 });
+  assert.equal(big.length, 2); assert.equal(big[0].length, 2);
+});

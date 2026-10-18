@@ -7,7 +7,8 @@ needed to run.
 
 And the tools that take an Apple title's disks apart: a DOS 3.3 disk read (`dos33-disk.js`) and a ProDOS one
 (`prodos-disk.js`, a 140K `.dsk`, a `.po` or a `.2mg`), a hi-res or double hi-res screen as a picture
-(`hires-picture.js`, drawn as the machine draws it), and an Applesoft program listed (`applesoft-list.js`). The
+(`hires-picture.js`, drawn as the machine draws it), an Applesoft program listed (`applesoft-list.js`), and a
+shape table's shapes walked as DRAW walks them (`shapes.js`, which the ROM's DRAW plots through). The
 disks and pictures in Node only.
 
 Part of Moonbase (moonbase.au): Mark Wharton's titles of 1985 to 1995, running again in the browser

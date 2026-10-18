@@ -87,3 +87,19 @@ test('an Applesoft program listed: keywords spaced, a string and REM as written,
   bytes.push(0, 0);
   assert.equal(list(Uint8Array.from(bytes)), '10 PRINT "HI"\n20 REM PRINT IS TEXT\n30 PRINT "{CTRL-D}"\n');
 });
+
+test('a shape walked as DRAW walks it: its dots, the pen\'s end, a rotation and a scale', async () => {
+  const { dots, walk, shapeAt } = await import('@moonbase-machines/apple2e/shapes.js');
+  // a table of one shape: plot and move right, plot and move right, plot and move down ($25 = 100 101: two vectors),
+  // then plot and move down (6, 110), a zero to end
+  const table = Uint8Array.from([1, 0, 4, 0, 0x2d, 0x06, 0]);
+  const { dots: d, end } = dots(table, 1);
+  assert.deepEqual(d, [[0, 0], [1, 0], [2, 0]]);
+  assert.deepEqual(end, [2, 1]);
+  const read = a => table[a] ?? 0, turned = [];
+  walk(read, shapeAt(read, 0, 1), { rot: 0x10, dot: (x, y) => turned.push([x, y]) });
+  assert.deepEqual(turned, [[0, 0], [0, 1], [0, 2]], 'a quarter turn: right becomes down');
+  const twice = [];
+  walk(read, shapeAt(read, 0, 1), { scale: 2, dot: (x, y) => twice.push([x, y]) });
+  assert.equal(twice.length, 6, 'scale 2: each move made twice, plotting each time');
+});

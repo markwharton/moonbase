@@ -226,6 +226,8 @@ export class Machine {
   // a file by its name: a full path from a volume, or one under the prefix; a DOS 3.3 name as it is
   get files() { return this.disk.files; }
   file(name) { return this.disk.file(name); }
+  put(path, f) { this.disk.put(path, f); }
+  remove(path) { this.disk.remove(path); }
 
   // JSR $BF00, a command byte and the address of a parameter block after it; back with A the
   // error and carry set on one

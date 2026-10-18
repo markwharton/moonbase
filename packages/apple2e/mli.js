@@ -16,6 +16,8 @@ const REFS = new Set([0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2
 const TYPES = { TXT: 0x04, BIN: 0x06, DIR: 0x0f, BAS: 0xfc, SYS: 0xff, FND: 0xc9, ICN: 0xca };
 // a file's type byte: by its name from a disk, or the byte a CREATE gave
 const typeOf = f => typeof f.type === 'number' ? f.type : TYPES[f.type] || 0;
+// the calls that change a file: CREATE, DESTROY, WRITE, CLOSE, SET_EOF
+const CHANGES = new Set([0xc0, 0xc1, 0xcb, 0xcc, 0xd0]);
 
 export class Files {
   constructor(game, log = () => {}) {
@@ -37,6 +39,13 @@ export class Files {
 
   // the state of the volume a path is on
   stateOf(path) { const full = path.startsWith('/') ? path : this.prefix + path; return this.disks[full.split('/')[1].toUpperCase()]; }
+
+  // A file put whole on a volume, or taken off it, as DOS 3.3's BSAVE and DELETE do (rom.js); and each change
+  // to a file, these or a call's, told to those listening (the player's disk, saves.js): onChange(f)
+  put(path, f) { this.files.set(path, f); this.changed(); }
+  remove(path) { if (this.files.delete(path)) this.changed(); }
+  onChange(f) { (this.listeners ??= []).push(f); }
+  changed() { for (const f of this.listeners ?? []) f(); }
 
   // a file by its name: a full path from a volume, or one under the prefix; a DOS 3.3 name as it is
   file(name) {
@@ -77,7 +86,12 @@ export class Files {
   // A call: its command and parameters at `params` in `mem` ({ read, write }); gives the error,
   // 0 for none. A READ's bytes are put in memory by `arrive`, which `deliver(n, arrive)` may
   // hold back, as the machine does to give the read a disk's time.
-  call(cmd, params, mem, { deliver = (n, arrive) => arrive() } = {}) {
+  call(cmd, params, mem, options) {
+    const r = this.answer(cmd, params, mem, options);
+    if (CHANGES.has(cmd)) this.changed();
+    return r;
+  }
+  answer(cmd, params, mem, { deliver = (n, arrive) => arrive() } = {}) {
     const read16 = a => mem.read(a) | mem.read(a + 1) << 8;
     const pstring = a => { const n = mem.read(a); let s = ''; for (let i = 0; i < n; i++) s += String.fromCharCode(mem.read(a + 1 + i) & 0x7f); return s; };
     const p = k => mem.read(params + k), p16 = k => read16(params + k), set = (k, v) => mem.write(params + k, v & 0xff);

@@ -20,6 +20,7 @@ export * as paint from './paint.js';
 export * as petscii from './petscii.js';
 export * as printer from './printer.js';
 export * as rom from './rom.js';
+export * as saves from './saves.js';
 export * as sid from './sid.js';
 export * as start from './start.js';
 export * as vic from './vic.js';

@@ -84,7 +84,8 @@ export function install(m) {
   function home() { const l = z(0x20), w = z(0x21), t = z(0x22), b = z(0x23); for (let r = t; r < b; r++) for (let x = l; x < l + w; x++) zw(rowBase(r) + x, 0xa0); zw(0x24, 0); zw(0x25, t); vtab(); }
   function scroll() { const l = z(0x20), w = z(0x21), t = z(0x22), b = z(0x23); for (let r = t; r + 1 < b; r++) for (let x = l; x < l + w; x++) zw(rowBase(r) + x, z(rowBase(r + 1) + x)); for (let x = l; x < l + w; x++) zw(rowBase(b - 1) + x, 0xa0); }
   // DOS 3.3 watches what is printed for a control-D at the start of a line, and takes what
-  // follows up to the return as a command: BLOAD and BSAVE are answered from the disk's files
+  // follows up to the return as a command: BLOAD and BSAVE are answered from the disk's files, BSAVE and
+  // DELETE through the machine's put and remove, so the player's disk hears of them (saves.js)
   let command = null;
   function dos(ch) {
     if (command === null) { if (ch === 0x84 && z(0x24) === 0) command = ''; return command !== null; }
@@ -95,8 +96,8 @@ export function install(m) {
     const [name, ...opts] = m2[2].split(','), at = opts.map(o => /^A\$?([0-9A-F]+)/i.exec(o.trim())).find(Boolean), len = opts.map(o => /^L\$?([0-9A-F]+)/i.exec(o.trim())).find(Boolean);
     const verb = m2[1].toUpperCase(), f = m.file(name.trim());
     if (verb === 'BLOAD') { if (!f) { m.log('BLOAD ' + name + ': not found'); return true; } const a = at ? parseInt(at[1], 16) : f.aux; for (let i = 0; i < f.body.length; i++) zw(a + i, f.body[i]); m.log('BLOAD', name.trim(), '$' + a.toString(16)); }
-    else if (verb === 'BSAVE') { const a = at ? parseInt(at[1], 16) : 0, n = len ? parseInt(len[1], 16) : 0; const body = new Uint8Array(n); for (let i = 0; i < n; i++) body[i] = z(a + i); const key = '/DISK/' + name.trim().toUpperCase(); m.files.set(key, { volume: 'DISK', path: name.trim().toUpperCase(), type: 'B', aux: a, body }); m.log('BSAVE', name.trim()); }
-    else if (verb === 'DELETE') { m.files.delete('/DISK/' + name.trim().toUpperCase()); }
+    else if (verb === 'BSAVE') { const a = at ? parseInt(at[1], 16) : 0, n = len ? parseInt(len[1], 16) : 0; const body = new Uint8Array(n); for (let i = 0; i < n; i++) body[i] = z(a + i); m.put('/DISK/' + name.trim().toUpperCase(), { volume: 'DISK', path: name.trim().toUpperCase(), type: 'B', aux: a, body }); m.log('BSAVE', name.trim()); }
+    else if (verb === 'DELETE') { m.remove('/DISK/' + name.trim().toUpperCase()); }
     return true;
   }
   // COUT1 and the Monitor's VIDOUT, as the IIe's ROM has them: a character from $A0 up masked by

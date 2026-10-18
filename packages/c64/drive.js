@@ -22,6 +22,7 @@ export class Drive {
     this.image = image;
     this.mem = new Uint8Array(0x800);   // the drive's RAM: $0200 the command buffer, $0300 to $07FF the four buffers
     this.saved = new Map();   // files saved this session, by name, as raw bytes; they shadow the disk
+    this.keep = null;         // (name, raw): told of each file saved, to keep it (saves.js)
     this.channels = new Map();   // open channels by secondary address 0 to 15
     this.listening = false; this.talking = false; this.channel = 0; this.opening = null;
     this.status = bytes(OK); this.reply = null; this.pos = 0;
@@ -108,7 +109,8 @@ export class Drive {
     this.remember(f); this.status = bytes(f ? OK : NOT_FOUND);
     return f && f.raw;
   }
-  save(name, raw) { this.saved.set(String.fromCharCode(...Drive.strip(name)), raw); this.status = bytes(OK); }
+  save(name, raw) { this.store(String.fromCharCode(...Drive.strip(name)), raw); this.status = bytes(OK); }
+  store(name, raw) { this.saved.set(name, raw); this.keep?.(name, raw); }
 
   // the bus, as the KERNAL's routines present it
   listen(device) { this.listening = device === 8; return this.listening; }
@@ -168,7 +170,7 @@ export class Drive {
   }
   close(ch) {
     const c = this.channels.get(ch);
-    if (c && c.write) this.saved.set(c.name, Uint8Array.from(c.write));
+    if (c && c.write) this.store(c.name, Uint8Array.from(c.write));
     if (ch !== 15) this.channels.delete(ch);
   }
 

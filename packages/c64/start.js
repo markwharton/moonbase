@@ -1,5 +1,5 @@
 // How a C64 game starts, in a page and in tests that start every game as the page does: which
-// ROMs it runs on, ?game=<slug>&roms=<choice>,
+// ROMs it runs on, a player page's ?roms=<choice> (/play/<slug>/original/, in the preview),
 //   (none), moonbase    moonbase's, characters and all (rom.js): the default, as moonbase.au
 //                       has it
 //   commodore           Commodore's, where this machine has them: a flag, off unless asked for,

@@ -15,6 +15,9 @@
     "build": "node tools/package-files.mjs"
   },
   "devDependencies": {
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "playcanvas": "^2.23.3",
+    "playwright": "1.63.0",
+    "vosk-browser": "0.0.8"
   }
 }

@@ -10,6 +10,7 @@
     "./*": "./*"
   },
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "prepack": "node ../../tools/package-files.mjs mos6502"
   }
 }

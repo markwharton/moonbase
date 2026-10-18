@@ -22,7 +22,8 @@ import { CPU } from '@moonbase-machines/mos6502/cpu.js';
 
 `npm install` links the packages to each other; `npm test` runs their tests; `npm run build`
 makes each package one file, `packages/<name>/dist/moonbase-<name>.js`, minified, with its source
-map: the others it uses imported by name (`@moonbase-machines/mos6502`), so a page maps each name to its file:
+map: the others it uses imported by name (`@moonbase-machines/mos6502`), so a page maps each name to its file.
+Each package makes its own when it is packed or published, so the file published is its own code and version:
 
 ```html
 <script type="importmap">{"imports": {"@moonbase-machines/mos6502": "/lib/moonbase-mos6502.js", "@moonbase-machines/charset": "/lib/moonbase-charset.js", "@moonbase-machines/c64": "/lib/moonbase-c64.js"}}</script>

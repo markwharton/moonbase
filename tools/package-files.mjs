@@ -4,7 +4,9 @@
 // imported by name ('@moonbase-machines/mos6502'), from their own files. A module of another package,
 // '@moonbase-machines/mos6502/cpu.js', is answered from that package's file, its namespace there.
 //
-//   node tools/package-files.mjs                  the four files
+//   node tools/package-files.mjs [name ...]       the files, every package's unless named; each package's own
+//                                                 before it is packed or published (its prepack script), so
+//                                                 the file it is published with is its own code and version
 //
 // The same plugin, asFiles(), lets a page's bundle import the machines from their files by name.
 import { build } from 'esbuild';
@@ -44,10 +46,14 @@ export const asFiles = except => ({
 });
 
 
-export async function packageFiles() {
-  for (const name of PACKAGES)
+export async function packageFiles(names = PACKAGES) {
+  for (const name of names)
     await build({ ...common, entryPoints: [join(root, 'packages', name, 'index.js')], outfile: join(root, 'packages', name, 'dist', `moonbase-${name}.js`), banner: { js: MIT(name) }, plugins: [asFiles(name)] });
-  return PACKAGES.map(p => `packages/${p}/dist/moonbase-${p}.js`);
+  return names.map(p => `packages/${p}/dist/moonbase-${p}.js`);
 }
 
-if (import.meta.url === 'file://' + process.argv[1]) console.log((await packageFiles()).join(', '));
+if (import.meta.url === 'file://' + process.argv[1]) {
+  const names = process.argv.slice(2);
+  for (const n of names) if (!PACKAGES.includes(n)) throw new Error(`package-files: no file for ${n}`);
+  console.log((await packageFiles(names.length ? names : PACKAGES)).join(', '));
+}

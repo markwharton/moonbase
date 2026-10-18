@@ -8,5 +8,8 @@
   "exports": {
     ".": "./index.js",
     "./*": "./*"
+  },
+  "scripts": {
+    "prepack": "node ../../tools/package-files.mjs charset"
   }
 }

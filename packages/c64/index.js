@@ -2,6 +2,7 @@
 // whole package at once: import { machine } from '@moonbase-machines/c64'. Each module can be imported
 // on its own too: '@moonbase-machines/c64/<module>.js'.
 export * as basicCompile from './basic-compile.js';
+export * as basicList from './basic-list.js';
 export * as basicLang from './basic-lang.js';
 export * as basicRom from './basic-rom.js';
 export * as basic from './basic.js';

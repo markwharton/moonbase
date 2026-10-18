@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url).pathname;
-export const PACKAGES = ['6502', 'charset', 'c64', 'apple2e'];
+export const PACKAGES = ['6502', 'charset', 'c64', 'apple2e'];   // (files is Node's alone: no file of its own for a page)
 const pkg = name => JSON.parse(readFileSync(join(root, 'packages', name, 'package.json'), 'utf8'));
 export const MIT = name => `/*! @moonbase-machines/${name} ${pkg(name).version}: MIT, (c) 2026 Mark Wharton (its LICENSE) */`;
 export const common = { bundle: true, format: 'esm', minify: true, sourcemap: 'linked', target: 'es2022', logLevel: 'warning', legalComments: 'inline' };

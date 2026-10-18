@@ -5,5 +5,8 @@ line at a time, the SID's three voices, a 1541 and its `.d64` disks, a printer, 
 joystick, and Moonbase's own KERNAL, BASIC and characters in place of Commodore's ROMs, so that
 nothing of Commodore's is needed to run.
 
+And for taking a title's disks apart: a 1541 disk read as well as written (`d64.js`), and a BASIC program listed
+as the 64 lists it (`basic-list.js`).
+
 Part of Moonbase (moonbase.au): Mark Wharton's titles of 1985 to 1995, running again in the browser
 on these machines. MIT; see LICENSE. Each file opens with what it is and what it covers.

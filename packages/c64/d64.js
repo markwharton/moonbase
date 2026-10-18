@@ -10,6 +10,10 @@
 //     data   the file's bytes; for a program, its load address first, as a .prg has it
 //     a Uint8Array of 174,848 bytes
 //   add(image, files)   files added to a disk that has some, theirs left where they are (below)
+//   read(image)         a disk read: { name, id, files: [{ name, type, locked, closed, blocks, body, address and raw
+//                       (a program: its load address, and its bytes with it) }] }; each body a Uint8Array
+//   petsciiName(bytes)  a name as the 1541 keeps it, as text: shifted letters $C1 to $DA as capitals, the $A0
+//                       padding gone
 export const SECTORS = [...Array(17).fill(21), ...Array(7).fill(19), ...Array(6).fill(18), ...Array(5).fill(17)];
 const TYPES = { DEL: 0, SEQ: 1, PRG: 2, USR: 3, REL: 4 };
 const offset = (t, s) => (SECTORS.slice(0, t - 1).reduce((a, b) => a + b, 0) + s) * 256;
@@ -150,4 +154,38 @@ export function add(image, files) {
     out[e + 30] = chunks & 0xff; out[e + 31] = chunks >> 8;
   }
   return out;
+}
+
+// Reading a disk: the BAM's sector names the disk, and the directory's chain from track 18, sector 1, eight
+// 32-byte entries a sector, each a file's type, its first sector and its name; a file's sectors follow each
+// other by their first two bytes, the last one's second byte the index of its last byte.
+const NAMES = ['DEL', 'SEQ', 'PRG', 'USR', 'REL'];
+export const petsciiName = bytes => String.fromCharCode(...[...bytes].filter(b => b !== 0xa0).map(b => (b >= 0xc1 && b <= 0xda ? b - 0x80 : b))).trim();
+
+export function read(image) {
+  if (image.length !== 174848 && image.length !== 175531) throw new Error('a .d64 is 174,848 bytes, and this one is ' + image.length);
+  const sector = (t, s) => image.subarray(offset(t, s), offset(t, s) + 256);
+  const chain = (t, s) => {
+    const parts = [];
+    while (t) { const b = sector(t, s); [t, s] = [b[0], b[1]]; parts.push(b.subarray(2, t ? 256 : s + 1)); }
+    const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+    parts.reduce((at, p) => (out.set(p, at), at + p.length), 0);
+    return out;
+  };
+  const bam = sector(18, 0);
+  const name = petsciiName(bam.subarray(0x90, 0xa0)), id = String.fromCharCode(bam[0xa2], bam[0xa3]);
+  const files = [];
+  for (let [t, s] = [bam[0], bam[1]]; t; ) {
+    const b = sector(t, s);
+    for (let i = 0; i < 8; i++) {
+      const e = b.subarray(i * 32, (i + 1) * 32);
+      if (!e[2]) continue;
+      const type = NAMES[e[2] & 7] || '?', body = chain(e[3], e[4]);
+      const file = { name: petsciiName(e.subarray(5, 21)), type, locked: !!(e[2] & 0x40), closed: !!(e[2] & 0x80), blocks: e[30] | e[31] << 8, body };
+      if (type === 'PRG' && body.length >= 2) { file.address = body[0] | body[1] << 8; file.body = body.subarray(2); file.raw = body; }
+      files.push(file);
+    }
+    [t, s] = [b[0], b[1]];
+  }
+  return { name, id, files };
 }

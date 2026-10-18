@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@moonbase-machines/6502": "0.3.0",
-    "@moonbase-machines/charset": "0.3.0"
+    "@moonbase-machines/charset": "0.3.0",
+    "@moonbase-machines/files": "0.3.0"
   },
   "scripts": {
     "test": "node --test test/*.test.js"

@@ -78,6 +78,10 @@
         "type": "json"
       },
       {
+        "path": "packages/files/package.json",
+        "type": "json"
+      },
+      {
         "path": "packages/c64/package.json",
         "type": "json"
       },

@@ -3,7 +3,7 @@
   "changelog": {
     "hooks": {
       "postVersion": "node tools/package-versions.mjs \"$VERSION\"",
-      "preCommit": "git add packages/mos6502/package.json packages/charset/package.json packages/files/package.json packages/c64/package.json packages/apple2e/package.json packages/vector/package.json"
+      "preCommit": "git add packages/mos6502/package.json packages/charset/package.json packages/files/package.json packages/c64/package.json packages/apple2e/package.json packages/vector/package.json packages/player/package.json"
     },
     "types": [
       {
@@ -91,6 +91,10 @@
       },
       {
         "path": "packages/vector/package.json",
+        "type": "json"
+      },
+      {
+        "path": "packages/player/package.json",
         "type": "json"
       }
     ]

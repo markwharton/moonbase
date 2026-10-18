@@ -14,10 +14,10 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url).pathname;
-export const PACKAGES = ['mos6502', 'charset', 'c64', 'apple2e', 'vector'];   // (files is Node's alone: no file of its own for a page)
+export const PACKAGES = ['mos6502', 'charset', 'c64', 'apple2e', 'vector', 'player'];   // (files is Node's alone: no file of its own for a page)
 const pkg = name => JSON.parse(readFileSync(join(root, 'packages', name, 'package.json'), 'utf8'));
 export const MIT = name => `/*! @moonbase-machines/${name} ${pkg(name).version}: MIT, (c) 2026 Mark Wharton (its LICENSE) */`;
-export const common = { bundle: true, format: 'esm', minify: true, sourcemap: 'linked', target: 'es2022', logLevel: 'warning', legalComments: 'inline' };
+export const common = { bundle: true, format: 'esm', minify: true, sourcemap: 'linked', target: 'es2022', logLevel: 'warning', legalComments: 'inline', external: ['node:*'] };
 
 // (a module of a package, '@moonbase-machines/c64/machine.js', answered from the package's one file: its
 // namespace there, 'machine', each name the module exports taken from it; every name a module
@@ -28,7 +28,8 @@ const names = async (name, file) => {
   if (!exported.has(key)) exported.set(key, Object.keys(await import(join(root, 'packages', name, file))));
   return exported.get(key);
 };
-const namespace = file => file.replace(/\.js$/, '').replace(/-(.)/g, (_, c) => c.toUpperCase()).replace(/^(\d)/, '_$1');
+// (a module in a folder of its package named with it: remake/main.js, remakeMain)
+const namespace = file => file.replace(/\.js$/, '').replace(/[-/](.)/g, (_, c) => c.toUpperCase()).replace(/^(\d)/, '_$1');
 export const asFiles = except => ({
   name: 'moonbase-packages',
   setup(b) {

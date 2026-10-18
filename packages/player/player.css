@@ -1,0 +1,48 @@
+/* The player's own look: the stage the game is drawn on, the options line under it, the paper a C64 game's printer
+   prints on, and the modal window and the disk's dialogs (modal.js, disk/dialogs.js). Its colours are the page's,
+   where the page names them (--screen, --muted, --gold, --alert, --line, --surface, --ink, --bg, --accent,
+   --accent-ink, --sans), else these. */
+
+.game .stage { position: relative; width: min(100%, 960px, calc((var(--vvh, 100vh) - 260px) * 560 / 384)); margin: 0 auto; aspect-ratio: 560 / 384; background: var(--screen, #000); border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px -12px #0006; }
+.game .stage canvas, .game .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.game .stage canvas { image-rendering: pixelated; }
+/* the remake's mini view, where the page gives one: in the band at the top of the screen, placed by the title's inset */
+.game .stage .mini { position: absolute; overflow: hidden; border-radius: 3px; background: #000; pointer-events: none; }
+.game .stage .mini.toggle { pointer-events: auto; cursor: pointer; }
+.game .stage .mini canvas, .game .stage .mini img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: auto; }
+.game.remake .stage { background: #fff; }
+.game.remake .stage svg .key { cursor: pointer; }
+.game.remake .stage svg .key:hover rect { stroke: var(--gold, #a8801f); }
+.options { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: center; font-size: 15px; color: var(--muted, #5d6475); margin: 14px 0; }
+#status.error { color: var(--alert, #9b3d2e); }
+#paper { display: block; width: 100%; height: auto; border-radius: 2px; box-shadow: 0 2px 8px #0005; }
+#paper-box { max-width: 960px; margin: 0 auto; }
+@media print {
+  @page { size: landscape; margin: 10mm; }
+  body { background: #fff; }
+  body *:not(:has(#paper)):not(#paper) { display: none; }
+  main, section, #paper-box { margin: 0; padding: 0; max-width: none; }
+  #paper { width: 100%; box-shadow: none; }
+}
+/* the button that opens a phone's keyboard, and the box it types into: there, and unseen */
+.full { font: inherit; font-size: 13px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line, #e4dfd3); background: transparent; color: var(--muted, #5d6475); cursor: pointer; }
+.full:hover { color: var(--ink, #1b2233); border-color: var(--gold, #a8801f); }
+.keys-box { position: absolute; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; pointer-events: none; }
+
+/* a modal window and the disk's dialogs in it: over the place it opens in, a game's screen, its frame and look that
+   game's own where it has one (its title's stylesheet); on the page, the page's */
+.modal-layer { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; }
+.modal-layer.page { position: fixed; background: #0007; }
+.modal { border: 1px solid var(--line, #e4dfd3); border-radius: 12px; background: var(--surface, #fff); color: var(--ink, #1b2233); font: 16px/1.5 var(--sans, system-ui, sans-serif); padding: 20px 22px; width: min(560px, calc(100vw - 32px)); box-shadow: 0 20px 50px -20px #0008; }
+.modal .disk h2 { font-size: 20px; margin: 0 0 12px; }
+.modal .disk label { display: flex; gap: 8px; align-items: center; }
+.modal .disk input, .modal .disk select { font: inherit; background: var(--bg, #fbf9f4); color: var(--ink, #1b2233); border: 1px solid var(--line, #e4dfd3); border-radius: 6px; padding: 6px 8px; }
+.modal .disk label input { flex: 1; min-width: 0; }
+.modal .disk select { display: block; width: 100%; margin: 6px 0 4px; }
+.modal .disk .note { margin: 0; color: var(--muted, #5d6475); font-size: 15px; }
+.modal .disk button { font: 600 15px var(--sans, system-ui, sans-serif); padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line, #e4dfd3); background: transparent; color: var(--ink, #1b2233); cursor: pointer; white-space: nowrap; }
+.modal .disk button:disabled { opacity: 0.45; cursor: default; }
+.modal .disk .buttons { display: flex; justify-content: flex-end; flex-wrap: nowrap; gap: 8px; margin: 18px 0 0; }
+.modal .disk .buttons .aside { display: flex; gap: 8px; margin-right: auto; }
+@media (max-width: 600px) { .modal .disk .buttons { flex-wrap: wrap; } }
+.modal .disk .buttons .default { background: var(--accent, #1d2a4a); color: var(--accent-ink, #f3e3b5); border-color: var(--accent, #1d2a4a); }

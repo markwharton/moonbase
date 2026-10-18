@@ -10,7 +10,8 @@
     "packages/files",
     "packages/c64",
     "packages/apple2e",
-    "packages/vector"
+    "packages/vector",
+    "packages/player"
   ],
   "scripts": {
     "test": "node --test packages/*/test/*.test.js",

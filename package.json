@@ -9,7 +9,8 @@
     "packages/charset",
     "packages/files",
     "packages/c64",
-    "packages/apple2e"
+    "packages/apple2e",
+    "packages/vector"
   ],
   "scripts": {
     "test": "node --test packages/*/test/*.test.js",

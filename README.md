@@ -6,6 +6,7 @@ The machines Mark Wharton's titles of 1985 to 1995 run on again, in the browser 
 | Package | What it is |
 |---|---|
 | [`@moonbase-machines/mos6502`](packages/mos6502) | The 6502: its documented instructions, an assembler and a disassembler. |
+| [`@moonbase-machines/vector`](packages/vector) | Mark Wharton's vector graphics engine for the Apple IIe (Animal Rescue and Nature Park Adventure, 1989): its pictures, objects and font read, and drawn dot for dot. |
 | [`@moonbase-machines/files`](packages/files) | The formats the machines' files come in and go out as, in Node: PNG written and read, and zip read. |
 | [`@moonbase-machines/charset`](packages/charset) | Moonbase's own character set for the Commodore 64, and the 5 by 7 font it and the Apple IIe's text screen are drawn from. |
 | [`@moonbase-machines/c64`](packages/c64) | A Commodore 64 as far as the games use it: the VIC-II, the SID, a 1541, a printer, and Moonbase's own KERNAL and BASIC in place of Commodore's ROMs. |

@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const version = process.argv[2] ?? process.env.VERSION;
 if (!/^\d+\.\d+\.\d+$/.test(version ?? '')) throw new Error(`package-versions: a version, not ${version}`);
-for (const name of ['mos6502', 'charset', 'files', 'c64', 'apple2e']) {
+for (const name of ['mos6502', 'charset', 'files', 'c64', 'apple2e', 'vector']) {
   const file = new URL(`../packages/${name}/package.json`, import.meta.url), pkg = JSON.parse(readFileSync(file, 'utf8'));
   for (const dep of Object.keys(pkg.dependencies ?? {})) if (dep.startsWith('@moonbase-machines/')) pkg.dependencies[dep] = version;
   writeFileSync(file, JSON.stringify(pkg, null, 2) + '\n');

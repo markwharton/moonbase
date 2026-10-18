@@ -1,4 +1,4 @@
-// moonbase's own characters for the Commodore 64's character ROM, apart from @moonbase/c64/rom.js
+// moonbase's own characters for the Commodore 64's character ROM, apart from @moonbase-machines/c64/rom.js
 // so that a page needing only the characters (a PET's screen) loads only them.
 //
 //   chargen()   the character ROM's 4K: the two sets, each 128 characters and their reverse

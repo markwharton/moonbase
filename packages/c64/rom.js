@@ -1,5 +1,5 @@
 // The Commodore 64's ROMs in JavaScript, since the ROMs are Commodore's own: the original's
-// counterpart of @moonbase/apple2e/rom.js for the Apple. The games run as they are, their own
+// counterpart of @moonbase-machines/apple2e/rom.js for the Apple. The games run as they are, their own
 // bytes on the 6510; where one calls into the KERNAL or BASIC, the routine is answered here, at
 // its address, as the remake's KERNAL answers it (kernal.js), and the machine goes on as the
 // ROM's would have left it. A routine not here stops the machine and says where, as the remake
@@ -12,7 +12,7 @@
 // processor's three vectors, the KERNAL's keyboard tables (kernal.js `kernalByte`), and three
 // bytes Zoopak's code reads with BIT only to skip the two bytes after it (BIT $AE91, $FBB1 and
 // $FFA9), whose top two bits the flags take. Any other byte read stops the machine too. The
-// character set is moonbase's own 5 by 7 font (@moonbase/charset/font.js), the Apple's: a game
+// character set is moonbase's own 5 by 7 font (@moonbase-machines/charset/font.js), the Apple's: a game
 // that draws in its own characters (Zoopak's, from RAM) is not touched by it.
 //
 // The titles it runs, each held to the remake and to Commodore's ROMs, are `STANDS_IN`: Zoopak,
@@ -20,7 +20,7 @@
 // on the 64, Moonbase's own, held to Commodore's ROMs.
 import { install as kernal, kernalByte, VIC, VECTORS } from './kernal.js';
 import { CONSTANTS } from './float.js';
-import { chargen } from '@moonbase/charset/chargen.js';
+import { chargen } from '@moonbase-machines/charset/chargen.js';
 import { install as basicRom, printError, evaluateInMemory } from './basic-rom.js';
 import { lines, direct, crunch, store, list, program as programLines, dataItems } from './basic-lang.js';
 import { instantiate, evaluator } from './basic-compile.js';

@@ -6,8 +6,8 @@
 //   node --test test/*.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assemble, AsmError } from '@moonbase/6502/asm.js';
-import { OPS, disassemble, operand } from '@moonbase/6502/disasm.js';
+import { assemble, AsmError } from '@moonbase-machines/6502/asm.js';
+import { OPS, disassemble, operand } from '@moonbase-machines/6502/disasm.js';
 
 test('every instruction, in every mode, reads back the same', () => {
   let source = '*= $1000\n';

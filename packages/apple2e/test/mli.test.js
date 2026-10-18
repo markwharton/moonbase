@@ -5,7 +5,7 @@
 //   node --test test/*.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Files } from '@moonbase/apple2e/mli.js';
+import { Files } from '@moonbase-machines/apple2e/mli.js';
 
 const b64 = s => btoa(String.fromCharCode(...s));
 // a game of two volumes, a file on each and one in a directory, and a blank data disk

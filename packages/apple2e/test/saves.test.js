@@ -4,8 +4,8 @@
 //   node --test test/*.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Files } from '@moonbase/apple2e/mli.js';
-import { withSaves, keepSaves } from '@moonbase/apple2e/saves.js';
+import { Files } from '@moonbase-machines/apple2e/mli.js';
+import { withSaves, keepSaves } from '@moonbase-machines/apple2e/saves.js';
 
 // a player's disk as saves.js uses it, in memory
 function playerDisk() {

@@ -5,7 +5,7 @@
 //   node --test test/*.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { install } from '@moonbase/apple2e/rom.js';
+import { install } from '@moonbase-machines/apple2e/rom.js';
 
 // a machine of nothing but memory and a processor's registers, with the routines on its hooks
 function machine() {

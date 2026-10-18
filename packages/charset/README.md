@@ -1,4 +1,4 @@
-# @moonbase/charset
+# @moonbase-machines/charset
 
 Moonbase's own character set for the Commodore 64, drawn in the 64's geometry, and the 5 by 7 dot
 font it and the Apple IIe's text screen are built from. Commodore's and Apple's character ROMs are

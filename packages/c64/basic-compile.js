@@ -138,7 +138,7 @@ export function compile(statements, { name, source, mem, cost = 0, render }) {
     return (s.op !== undefined ? `b.here(0x${s.op.toString(16)}); ` : '') + c;
   });
   const out = [];
-  out.push(`// ${name}, compiled from ${source} by @moonbase/c64/basic-compile.js: compiled again, never edited`);
+  out.push(`// ${name}, compiled from ${source} by @moonbase-machines/c64/basic-compile.js: compiled again, never edited`);
   out.push('export default {');
   out.push(`  labels: ${JSON.stringify(labels)},`);
   out.push('  data: [],');

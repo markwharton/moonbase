@@ -1,5 +1,5 @@
 // The Commodore 64's KERNAL as far as Zoopak calls it, in JavaScript, at the addresses it calls
-// it: the remake's counterpart of @moonbase/apple2e/rom.js, without Commodore's ROM. Each routine
+// it: the remake's counterpart of @moonbase-machines/apple2e/rom.js, without Commodore's ROM. Each routine
 // takes what the KERNAL took in the registers and the zero page, and leaves what it left there.
 //
 //   install({ cpu, read, write, drive, loaded, call, log })

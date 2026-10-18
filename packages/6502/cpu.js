@@ -9,7 +9,7 @@
 export class CPU {
   // writeBack: a read-modify-write instruction writes the value it read back before the new one,
   // as the NMOS chip does on its spare cycle; on the C64 that first write is what acknowledges the
-  // VIC-II's interrupt in DEC $D019 or ASL $D019, a demo's usual way (@moonbase/c64/machine.js)
+  // VIC-II's interrupt in DEC $D019 or ASL $D019, a demo's usual way (@moonbase-machines/c64/machine.js)
   constructor(machine, { nmos = false, writeBack = false } = {}) {
     this.m = machine;
     this.nmos = nmos; this.writeBack = writeBack;
@@ -100,7 +100,7 @@ export class CPU {
 
   step() {
     // (a hook that goes on elsewhere, setting the PC and returning false, has that place's hook
-    // run too: a routine of a ROM in JavaScript jumping on to another, @moonbase/c64/rom.js)
+    // run too: a routine of a ROM in JavaScript jumping on to another, @moonbase-machines/c64/rom.js)
     for (let hook = this.hooks.get(this.pc), guard = 0; hook && guard < 8; hook = this.hooks.get(this.pc), guard++) {
       const at = this.pc, r = hook(this);
       if (r === 'wait') { this.cycles += 10; return 10; }

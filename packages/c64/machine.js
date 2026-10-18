@@ -4,7 +4,7 @@
 // joystick through the first, the SID's registers, and the 1541 in drive.js, answered when the
 // KERNAL is asked to load or save and at the KERNAL's serial bus routines, so that the games'
 // own talking to the drive works too. PAL: 312 lines of 63 cycles, 985,248 cycles a second.
-import { CPU } from '@moonbase/6502/cpu.js';
+import { CPU } from '@moonbase-machines/6502/cpu.js';
 import { VIC } from './vic.js';
 import { Drive } from './drive.js';
 import { Printer, bus } from './printer.js';

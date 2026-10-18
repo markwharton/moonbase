@@ -1,6 +1,6 @@
-// @moonbase/c64: A Commodore 64, every module by name, for one file (a bundle) or to take the
-// whole package at once: import { machine } from '@moonbase/c64'. Each module can be imported
-// on its own too: '@moonbase/c64/<module>.js'.
+// @moonbase-machines/c64: A Commodore 64, every module by name, for one file (a bundle) or to take the
+// whole package at once: import { machine } from '@moonbase-machines/c64'. Each module can be imported
+// on its own too: '@moonbase-machines/c64/<module>.js'.
 export * as basicCompile from './basic-compile.js';
 export * as basicLang from './basic-lang.js';
 export * as basicRom from './basic-rom.js';

@@ -1,5 +1,5 @@
 {
-  "name": "@moonbase/apple2e",
+  "name": "@moonbase-machines/apple2e",
   "version": "0.2.0",
   "description": "An Apple IIe with 128K as far as the games use it: double hi-res, the Disk II, ProDOS, and Moonbase's own ROM routines in place of Apple's.",
   "type": "module",
@@ -10,8 +10,8 @@
     "./*": "./*"
   },
   "dependencies": {
-    "@moonbase/6502": "0.2.0",
-    "@moonbase/charset": "0.2.0"
+    "@moonbase-machines/6502": "0.2.0",
+    "@moonbase-machines/charset": "0.2.0"
   },
   "scripts": {
     "test": "node --test test/*.test.js"

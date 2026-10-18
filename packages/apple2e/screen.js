@@ -4,7 +4,7 @@
 import { COLORS } from './colors.js';
 export { COLORS };
 
-import { FONT } from '@moonbase/charset/font.js';
+import { FONT } from '@moonbase-machines/charset/font.js';
 
 // the text page: 24 rows of 40 characters, a row's start being 0x400 * 0 + 0x80 * (r % 8) +
 // 0x28 * (r / 8); in 80 columns the auxiliary bank holds the even columns

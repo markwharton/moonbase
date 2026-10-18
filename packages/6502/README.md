@@ -1,4 +1,4 @@
-# @moonbase/6502
+# @moonbase-machines/6502
 
 The 6502: the documented instructions, run against a machine that gives it `read(address)` and
 `write(address, value)`; an assembler for Moonbase's own 6502 code; and a disassembler. The CPU

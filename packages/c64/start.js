@@ -6,7 +6,7 @@
 //                       kept as everyone else keeps them, to compare
 //   moonbase-petscii    moonbase's, with Commodore's character ROM, where this machine has it
 //
-//   await c64Roms(choice, slug, load)   the roms for new C64(game, roms), or null where Commodore's
+//   await c64Roms(choice, load)         the roms for new C64(game, roms), or null where Commodore's
 //                                       are asked for and cannot be had; load(name) gives a ROM's
 //                                       bytes (<name>.bin), or throws where it is not there
 //   typed(m, game)                      what is typed once BASIC is ready: LOAD"<start>",8,1,
@@ -17,7 +17,7 @@ import { standIn } from './rom.js';
 
 export const ROM_CHOICES = [null, 'commodore', 'moonbase-petscii'];
 
-export async function c64Roms(choice, slug, load) {
+export async function c64Roms(choice, load) {
   if (choice !== 'commodore' && choice !== 'moonbase-petscii') return standIn();
   try {
     if (choice === 'moonbase-petscii') return { ...standIn(), chargen: await load('chargen') };

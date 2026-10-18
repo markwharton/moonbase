@@ -1,30 +1,28 @@
 // The games a title saves, kept on the player's disk (`disk`, opened before the machine starts:
 // { list(), read(name), write(name, bytes, meta), remove(name) }), each by its name, with its type and aux beside it,
-// so a game saved is there the next time, on either line. Each title's saves are on a volume of its own (SAVES):
-// Detect-A-Pet's a ProDOS data disk in a drive beside the game's, SAVES; Pieces of Eight's its own DOS 3.3 disk,
-// DISK, as DOS 3.3 has one.
+// so a game saved is there the next time, on either line. A title's saves are on a volume of its own, as its game's
+// data says (`saves`: { volume, dos }): Detect-A-Pet's a ProDOS data disk in a drive beside the game's, SAVES, its
+// `dos` 'prodos'; Pieces of Eight's its own DOS 3.3 disk, DISK, 'dos33'. A game without `saves` saves nothing.
 //
 // On moonbase's ROM (line 2) the volume's files are the machine's Files (mli.js), its saves made by its ProDOS
 // calls or DOS 3.3's BSAVE (rom.js). On Apple's ROMs (line 1) the volume is a disk in a Disk II drive (disk2.js),
 // which the title's own DOS 3.3 or ProDOS writes: the kept saves are written onto its image before it boots
 // (onDisks), and its files read off its tracks each time the card says it was written (driveFiles).
 //
-//   const game = withSaves(slug, game, disk)    before the machine starts: the kept files on the volume
-//   const disks = onDisks(slug, disks, disk)   line 1: the kept files on the volume's disk image (prodos.js placed)
-//   keepSaves(slug, files, disk)                each change kept: `files` the machine's Files (line 2), or
-//                                               driveFiles(m, disks, slug) (line 1), none for a title that
-//                                               does not save
+//   const game = withSaves(game, disk)         before the machine starts: the kept files on the volume
+//   const disks = onDisks(game, disks, disk)   line 1: the kept files on the volume's disk image (prodos.js placed)
+//   keepSaves(game, files, disk)               each change kept: `files` the machine's Files (line 2), or
+//                                              driveFiles(m, disks, game) (line 1), none for a game that
+//                                              does not save
 import { dos33, save as saveDos33 } from './dos33-disk.js';
 import { prodos, save as saveProdos } from './prodos-disk.js';
 import { image } from './disk2.js';
 
-export const SAVES = { 'detect-a-pet': { volume: 'SAVES', dos: 'prodos' }, 'pieces-of-eight': { volume: 'DISK', dos: 'dos33' } };
-
 const b64 = b => { let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(s); };
 
 // the game's disks with the kept files on the saves' volume, beside any the game's own disk has there
-export function withSaves(slug, game, disk) {
-  const name = SAVES[slug]?.volume;
+export function withSaves(game, disk) {
+  const name = game.saves?.volume;
   if (!name) return game;
   const kept = Object.fromEntries(disk.list().map(f => [f.name, { type: f.meta.type, aux: f.meta.aux, data: b64(disk.read(f.name)) }]));
   return { ...game, volumes: { ...game.volumes, [name]: { ...game.volumes[name], ...kept } } };
@@ -32,8 +30,8 @@ export function withSaves(slug, game, disk) {
 
 // line 1's disks (prodos.js placed, of withSaves's game) with the kept files written onto the saves' volume's
 // image, a copy of it: as DOS 3.3's BSAVE writes a binary file, or ProDOS a file on a blank volume (in block order)
-export function onDisks(slug, disks, disk) {
-  const saves = SAVES[slug];
+export function onDisks(game, disks, disk) {
+  const saves = game.saves;
   if (!saves) return disks;
   return disks.map(d => {
     if (d.volume.toUpperCase() !== saves.volume) return d;
@@ -50,8 +48,8 @@ export function onDisks(slug, disks, disk) {
 // line 1's saves' volume as keepSaves reads it: its files off the drive's tracks, as the title's DOS wrote them,
 // and a change each time the card says the drive's disk was written. (A track the card's head left half written,
 // a sector unreadable, is read again at the next write.)
-export function driveFiles(m, disks, slug) {
-  const saves = SAVES[slug], d = saves && disks.find(x => x.volume.toUpperCase() === saves.volume);
+export function driveFiles(m, disks, game) {
+  const saves = game.saves, d = saves && disks.find(x => x.volume.toUpperCase() === saves.volume);
   if (!d) return null;
   const card = m.slots[d.unit >> 4 & 7], n = d.unit >> 7, listeners = [];
   let last = [];
@@ -73,8 +71,8 @@ export function driveFiles(m, disks, slug) {
 // to the player's disk if it is not as kept there, and each kept file no longer there removed. `files` gives the
 // volume's files, of(volume) [{ path, type, aux, body }], and onChange(f): the machine's Files, or driveFiles.
 const same = (a, b) => !!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]);
-export function keepSaves(slug, files, disk) {
-  const name = SAVES[slug]?.volume;
+export function keepSaves(game, files, disk) {
+  const name = game.saves?.volume;
   if (!name || !files || files.kept) return;
   files.kept = true;
   const kept = new Map(disk.list().map(f => [f.name, f.meta]));

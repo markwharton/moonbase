@@ -25,18 +25,20 @@ function playerDisk() {
   };
 }
 
+// the games' own `saves`, as their data has them
+const DAP = { saves: { volume: 'SAVES', dos: 'prodos' }, volumes: { DAP: {} } };
 function machine(kept) {
-  const files = new Files(withSaves('detect-a-pet', { volumes: { DAP: {} } }, kept));
-  keepSaves('detect-a-pet', files, kept);
+  const files = new Files(withSaves(DAP, kept));
+  keepSaves(DAP, files, kept);
   const mem = new Uint8Array(0x10000), io = { read: a => mem[a], write: (a, v) => { mem[a] = v & 0xff; } };
   const call = (cmd, bytes) => { mem.set(bytes, 0x300); return files.call(cmd, 0x300, io); };
   const name = s => { mem[0x400] = s.length; for (let i = 0; i < s.length; i++) mem[0x401 + i] = s.charCodeAt(i); };
   return { files, mem, call, name };
 }
 
-test('a title that saves has a data disk, and one with no saves has none', () => {
-  assert.deepEqual(Object.keys(withSaves('detect-a-pet', { volumes: { DAP: {} } }, playerDisk()).volumes), ['DAP', 'SAVES']);
-  assert.deepEqual(Object.keys(withSaves('animal-rescue', { volumes: { AR: {} } }, playerDisk()).volumes), ['AR']);
+test('a game that saves has a data disk, and one with no `saves` has none', () => {
+  assert.deepEqual(Object.keys(withSaves(DAP, playerDisk()).volumes), ['DAP', 'SAVES']);
+  assert.deepEqual(Object.keys(withSaves({ volumes: { AR: {} } }, playerDisk()).volumes), ['AR']);
 });
 
 test('a game saved is kept, is on the data disk the next time, and is gone once destroyed', () => {
@@ -63,9 +65,9 @@ test('a game saved is kept, is on the data disk the next time, and is gone once 
 // Pieces of Eight: a DOS 3.3 disk, its saves on its own volume, DISK, beside the game's files (BSAVE and DELETE
 // put and remove a file whole, rom.js)
 function po8(kept) {
-  const game = { kind: 'dos33', volumes: { DISK: { 'PO8:MAIN': { type: 'B', aux: 0x800, data: btoa('\x01\x02') } } } };
-  const files = new Files(withSaves('pieces-of-eight', game, kept));
-  keepSaves('pieces-of-eight', files, kept);
+  const game = { kind: 'dos33', saves: { volume: 'DISK', dos: 'dos33' }, volumes: { DISK: { 'PO8:MAIN': { type: 'B', aux: 0x800, data: btoa('\x01\x02') } } } };
+  const files = new Files(withSaves(game, kept));
+  keepSaves(game, files, kept);
   return files;
 }
 
@@ -102,12 +104,12 @@ test('the Disk II says a disk was written when the motor is switched off after a
 function po8Line1(kept) {
   const own = emptyDos33();
   saveDos33(own, { name: 'PO8:MAIN', address: 0x800, body: Uint8Array.from([1, 2]) });
-  const game = { kind: 'dos33', images: ['po8.dsk'], volumes: { DISK: { 'PO8:MAIN': { type: 'B', aux: 0x800, data: btoa('\x01\x02') } } } };
-  const disks = onDisks('pieces-of-eight', placed(withSaves('pieces-of-eight', game, kept), new Map([['po8.dsk', own]])), kept);
+  const game = { kind: 'dos33', saves: { volume: 'DISK', dos: 'dos33' }, images: ['po8.dsk'], volumes: { DISK: { 'PO8:MAIN': { type: 'B', aux: 0x800, data: btoa('\x01\x02') } } } };
+  const disks = onDisks(game, placed(withSaves(game, kept), new Map([['po8.dsk', own]])), kept);
   const card = new Disk2(new Uint8Array(256), () => 0), m = { slots: [] };
   m.slots[6] = card; card.insert(0, disks[0].image);
-  const files = driveFiles(m, disks, 'pieces-of-eight');
-  keepSaves('pieces-of-eight', files, kept);
+  const files = driveFiles(m, disks, game);
+  keepSaves(game, files, kept);
   // as the title's DOS would leave the disk: its catalogue changed on the tracks, then the motor off
   const write = change => { const bytes = image(card.drives[0].tracks); change(bytes); card.drives[0].tracks = Array.from({ length: TRACKS }, (_, t) => track(bytes, t)); card.drives[0].written = true; card.io(8); };
   return { disks, write };
@@ -131,8 +133,8 @@ test('line 1: a kept game is on Pieces of Eight\'s disk as it boots; a game its 
 test('line 1: Detect-A-Pet\'s SAVES is a blank ProDOS disk with the kept games on it', () => {
   const kept = playerDisk();
   kept.write('SAM', Uint8Array.from([7, 8, 9]), { type: 0x12, aux: 0 });
-  const game = { kind: 'prodos', images: ['dap.dsk'], volumes: { DAP: {} } };
-  const disks = onDisks('detect-a-pet', placed(withSaves('detect-a-pet', game, kept), new Map([['dap.dsk', new Uint8Array(143360)]])), kept);
+  const game = { ...DAP, kind: 'prodos', images: ['dap.dsk'] };
+  const disks = onDisks(game, placed(withSaves(game, kept), new Map([['dap.dsk', new Uint8Array(143360)]])), kept);
   const saves = disks.find(d => d.volume === 'SAVES');
   assert.equal(saves.unit, 0xe0, 'in drive 2 beside the game\'s');
   const read = prodos(image(Array.from({ length: TRACKS }, (_, t) => track(saves.image, t, { order: saves.order }))));

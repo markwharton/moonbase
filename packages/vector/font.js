@@ -50,12 +50,11 @@ export function dots(ch) {
   return out;
 }
 
-// Nature Park's font is Animal Rescue's but for two glyphs, read from its PART0 through its tables
-// at $6A32 and $6A9C: a zero without the stroke, and the underline a band of seven dots, which its
-// menus put either side of their names. `useFont` makes a title's font the one these read.
-const VARIANTS = { 'nature-park-adventure': { '0': [4, '609090909090600000'], '_': [7, '000054aa5400000000'] } };
+// A title's font: the engine's, these, but for any glyphs its own PART0 has otherwise, given as { character: [its
+// width, its rows as hex] } (Nature Park's: a zero without the stroke, and the underline a band of seven dots, read
+// through its tables at $6A32 and $6A9C). `useFont` makes them the ones these read; none, the engine's.
 const BASE = { widths: WIDTHS.slice(), glyphs: GLYPHS.slice() };
-export function useFont(slug) {
+export function useFont(variants = {}) {
   WIDTHS.splice(0, WIDTHS.length, ...BASE.widths); GLYPHS.splice(0, GLYPHS.length, ...BASE.glyphs);
-  for (const [ch, [w, rows]] of Object.entries(VARIANTS[slug] ?? {})) { WIDTHS[ch.charCodeAt(0) - 0x20] = w; GLYPHS[ch.charCodeAt(0) - 0x20] = rows; }
+  for (const [ch, [w, rows]] of Object.entries(variants)) { WIDTHS[ch.charCodeAt(0) - 0x20] = w; GLYPHS[ch.charCodeAt(0) - 0x20] = rows; }
 }

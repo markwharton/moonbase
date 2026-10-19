@@ -1,8 +1,9 @@
-// One way to start a title's remake, for the remake's page (main.js), a replay and Node (a pilot's observer): the
+// One way to start a title's remake, for the player (play.js), a replay and Node (a pilot's observer): the
 // title's title.js, from the folder it is in, with the modules it names (its problems, its paint); its scripts,
 // compiled to JavaScript (bin/moonbase-compile.mjs) or, with `scenes`, the scene files themselves to run line by line;
 // its game's data, from where the page keeps it; and an engine made from them.
 //
+//   const title = await titleOf(folder)                 the title alone: its title.js and the modules it names
 //   const { title, scripts, disk, folder } = await loadTitle(folder, { data })
 //     folder   the title's folder, an absolute URL (its title.js, its scenes, compiled/, its own modules)
 //     data     its game's data, an absolute URL (<slug>.json: its disks' files, its kind, its saves)
@@ -11,7 +12,7 @@
 // With `fixed`, a title that has a version with its bugs fixed (its title.js `fixed`, a script for each it replaces)
 // runs those scripts in place of its own. A title whose engine is its own (its title.js `engine` the name of a module
 // in its folder, not 'card' or 'vector') has no scripts here: its engine is loaded with its other modules, as
-// `title.own`, and runs the game itself (main.js).
+// `title.own`, and runs the game itself (play.js).
 import { Engine } from './engine.js';
 import { vectorRoutines } from './vector.js';
 import { cardRoutines } from './card.js';
@@ -29,13 +30,19 @@ async function read(url, as) {
 }
 const defaultOf = async url => (await import(url.href)).default;
 
-export async function loadTitle(folder, { data, scenes = false, fixed = false } = {}) {
+export async function titleOf(folder) {
   folder = new URL(folder);
   const title = { ...(await defaultOf(new URL('title.js', folder))) };
   // the modules a title has of its own, as its title.js names them (problems.js, paint.js), and its view's own
   // drawing (view.js), where it says it has one
   for (const name of title.modules ?? []) title[name] = await defaultOf(new URL(name + '.js', folder));
   if (title.view) title.viewSteps = await defaultOf(new URL('view.js', folder));
+  return title;
+}
+
+export async function loadTitle(folder, { data, scenes = false, fixed = false } = {}) {
+  folder = new URL(folder);
+  const title = await titleOf(folder);
   if (!ENGINES[title.engine]) {
     title.own = await import(new URL(title.engine + '.js', folder).href);
     return { title, scripts: {}, disk: null, folder };
@@ -45,6 +52,8 @@ export async function loadTitle(folder, { data, scenes = false, fixed = false } 
   const disk = await read(new URL(data), 'json');
   return { title, scripts, disk, folder };
 }
+
+export { read };
 
 export function makeEngine(title, scripts) {
   // (a ProDOS title's memory starts with what ProDOS leaves, as the original's does)

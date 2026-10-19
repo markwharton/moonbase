@@ -28,7 +28,7 @@ const names = async (name, file) => {
   if (!exported.has(key)) exported.set(key, Object.keys(await import(join(root, 'packages', name, file))));
   return exported.get(key);
 };
-// (a module in a folder of its package named with it: remake/main.js, remakeMain)
+// (a module in a folder of its package named with it: engines/original.js, enginesOriginal)
 const namespace = file => file.replace(/\.js$/, '').replace(/[-/](.)/g, (_, c) => c.toUpperCase()).replace(/^(\d)/, '_$1');
 export const asFiles = except => ({
   name: 'moonbase-packages',

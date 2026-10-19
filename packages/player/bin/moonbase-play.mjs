@@ -31,8 +31,8 @@ async function page() {
     .map(async f => ({ name: f.slice(0, -5), data: f, game: JSON.parse(await readFile(join(root, f), 'utf8')) })));
   const slug = title?.slug ?? games[0]?.name, name = title?.name ?? games[0]?.game.title ?? slug;
   // (the ways: the remake, its data the title's own or, for a title of its own engine, data/; an original for each game)
-  const ways = [...(title ? [{ label: 'Remake', search: '', module: 'remake/main.js', data: existsSync(join(root, slug + '.json')) ? slug + '.json' : 'data/' }] : []),
-    ...games.map((g, i) => ({ label: games.length > 1 ? g.game.title : 'Original', search: !title && !i ? '' : games.length > 1 ? `?game=${g.name}` : '?way=original', module: 'original.js', data: g.data }))];
+  const ways = [...(title ? [{ label: 'Remake', search: '', way: 'remake', data: existsSync(join(root, slug + '.json')) ? slug + '.json' : 'data/' }] : []),
+    ...games.map((g, i) => ({ label: games.length > 1 ? g.game.title : 'Original', search: !title && !i ? '' : games.length > 1 ? `?game=${g.name}` : '?way=original', way: 'original', data: g.data }))];
   const map = { imports: Object.fromEntries(PACKAGES.map(p => [`@moonbase-machines/${p}/`, `/packages/${p}/`])) };
   return `<!doctype html>
 <html lang="en">
@@ -54,9 +54,9 @@ ${ways.length > 1 ? `<nav>${ways.map(w => `<a href="/${w.search}">${esc(w.label)
 const ways = ${JSON.stringify(ways)};
 const way = ways.find(w => w.search === location.search) ?? ways[0];
 for (const a of document.querySelectorAll('nav a')) if (a.search === way.search) a.setAttribute('aria-current', 'page');
-const [{ play }, { openDisk, titleDisk }] = await Promise.all([import('@moonbase-machines/player/' + way.module), import('@moonbase-machines/player/disk/disk.js')]);
+const { play } = await import('@moonbase-machines/player/play.js');
 const at = path => new URL(path, location.origin + '/').href;
-await play({ title: at('title/'), data: at(way.data), root: document.getElementById('player'), disk: await openDisk(titleDisk(${JSON.stringify(slug)})),
+await play({ way: way.way, slug: ${JSON.stringify(slug)}, title: ${title ? "at('title/')" : 'null'}, data: at(way.data), root: document.getElementById('player'),
   words: { printer: { line: 'What the printer has printed.', print: 'Print', tear: 'Tear off' } } });
 </script>
 </body>

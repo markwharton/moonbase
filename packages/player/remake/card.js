@@ -135,8 +135,9 @@ export function cardRoutines(title) {
   else installRom({ cpu, game: title.disk, sw: { lcRead: 0 }, io: a => io(engine, a), file: n => files.file(n), get files() { return files.files; }, put: (path, f) => files.put(path, f), remove: path => files.remove(path), clicks: { push: c => engine.clicks.push(engine.cycles + c - romFrom) }, log() {}, halted: false });
   const rom = (e, at) => {
     const f = cpu.hooks.get(at);
-    // a Commodore 64's BASIC, which MENU runs NOTEBOOK (compiled BASIC) and ZOOTIME (BASIC) with
-    if (!f && c64 && at >= 0xa000 && at < 0xc000) throw new Error('a BASIC program (Zoopak\'s NOTEBOOK or ZOOTIME): not written yet in the remake');
+    // a Commodore 64's BASIC, which a BASIC program calls, as Zoopak's MENU runs NOTEBOOK (compiled BASIC) and
+    // ZOOTIME (BASIC) with
+    if (!f && c64 && at >= 0xa000 && at < 0xc000) throw new Error('a BASIC program, calling BASIC\'s ROM at $' + hex4(at) + ': not written yet in the remake');
     if (!f) throw new Error('no ROM routine at $' + hex4(at));
     engine = e;
     // (the stack pointer as the call to the routine left it: the frames' place, less the call's two bytes)
@@ -437,7 +438,7 @@ export function cardRoutines(title) {
   // as the observer has the original take it (the pilots' observer), and then the VIC's raster
   // interrupt, where the game has turned it on ($D01A), at the line it set (Find Me's split of its
   // screen into two character sets), $D019 saying which it is. On the page's clock (
-  // scenes.js sets `e.clock`), each is taken as the original's chips took it: the CIA's every 16,421
+  // engines/scenes.js sets `e.clock`), each is taken as the original's chips took it: the CIA's every 16,421
   // cycles of the original's time, the raster's when its line comes (routines.before). Not while
   // the game has them masked (SEI). The routine starts as the KERNAL's own entry ($FF48) leaves
   // it, with A, X and Y pushed, and the KERNAL's end ($EA31, $EA7B, $EA7E, $EA81), or its own PLAs

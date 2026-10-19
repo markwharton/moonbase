@@ -4,7 +4,9 @@
 // frame painted on a canvas doubled; and the machine run 50 frames a second, keeping up with the
 // clock, two frames at most at a time.
 //
-//   const keys = keyboard(m, { ignore, onKey, log })   ignore(e): a key the page keeps (a pane's)
+//   const keys = keyboard(m, { ignore, onKey, log, listen })   ignore(e): a key the page keeps (a pane's); listen(type,
+//                                                      f), where its keys come from (the window's, unless a player gives
+//                                                      its own)
 //   keys.press(column, row, frames)                    a key held for so many frames (RUN/STOP)
 //   const draw = painter(canvas)                       draw(m.vic.frame)
 //   pace(m, after)                                     the frames run; after() each animation frame
@@ -13,7 +15,7 @@ import { PALETTE, WIDTH, HEIGHT } from './vic.js';
 
 const PAD_DEAD = 0.4;   // a stick pushed less far than this is at rest (the dead zone)
 
-export function keyboard(m, { ignore = () => false, onKey = () => {}, log = false } = {}) {
+export function keyboard(m, { ignore = () => false, onKey = () => {}, log = false, listen = (type, f) => window.addEventListener(type, f) } = {}) {
   // (a letter by the key it is, not the character the browser makes of it: in the C64's first
   // character set, capitals and graphics, a letter is a letter, Shift or Caps Lock or not, and
   // Option with it is its graphic, the C64's shifted letter; in the second, small letters and
@@ -29,7 +31,7 @@ export function keyboard(m, { ignore = () => false, onKey = () => {}, log = fals
     if (since >= 2) { m.key(key[0], key[1], false); if (shift) m.key(1, 7, false); return; }
     held.push([key[0], key[1], 2 - since]); if (shift) held.push([1, 7, 2 - since]);
   };
-  window.addEventListener('keydown', e => {
+  listen('keydown', e => {
     if (ignore(e)) return;
     onKey(e);
     if (e.metaKey || e.repeat) return;
@@ -49,7 +51,7 @@ export function keyboard(m, { ignore = () => false, onKey = () => {}, log = fals
     if (log) console.log('key', JSON.stringify(e.key), '-> column', key[0], 'row', key[1]);
     e.preventDefault();
   });
-  window.addEventListener('keyup', e => {
+  listen('keyup', e => {
     if (MODIFIERS[e.key]) m.key(...MODIFIERS[e.key], false);
     if (JOYSTICK[e.key]) { m.joystick &= ~JOYSTICK[e.key]; const cur = CURSOR[e.key]; if (cur) { m.key(cur[0], cur[1], false); if (cur[2]) m.key(1, 7, false); } return; }
     const key = down.get(e.code);

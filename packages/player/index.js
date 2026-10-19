@@ -1,7 +1,12 @@
 // @moonbase-machines/player: every module by name, for one bundled file or to take the whole package at once:
-// import { remakeMain } from '@moonbase-machines/player'. Each module can be imported on its own too:
-// '@moonbase-machines/player/<module>.js' (remake/main.js, original.js, disk/disk.js).
-export * as original from './original.js';
+// import { play } from '@moonbase-machines/player', its modules each a namespace named by its path (play, diskDisk,
+// enginesOriginal). Each module can be imported on its own too: '@moonbase-machines/player/<module>.js' (play.js,
+// disk/disk.js).
+export * as play from './play.js';
+export * as keys from './keys.js';
+export * as saves from './saves.js';
+export * as enginesOriginal from './engines/original.js';
+export * as enginesScenes from './engines/scenes.js';
 export * as audio from './audio.js';
 export * as modal from './modal.js';
 export * as parts from './parts.js';
@@ -19,10 +24,8 @@ export * as remakeEvents from './remake/events.js';
 export * as remakeLayout from './remake/layout.js';
 export * as remakeLift from './remake/lift.js';
 export * as remakeLoad from './remake/load.js';
-export * as remakeMain from './remake/main.js';
 export * as remakeProblems from './remake/problems.js';
 export * as remakeRaster from './remake/raster.js';
-export * as remakeScenes from './remake/scenes.js';
 export * as remakeScript from './remake/script.js';
 export * as remakeVector from './remake/vector.js';
 export * as remakeView from './remake/view.js';

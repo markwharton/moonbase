@@ -3,16 +3,17 @@
    where the page names them (--screen, --muted, --gold, --alert, --line, --surface, --ink, --bg, --accent,
    --accent-ink, --sans), else these. */
 
-.game .stage { position: relative; width: min(100%, 960px, calc((var(--vvh, 100vh) - 260px) * 560 / 384)); margin: 0 auto; aspect-ratio: 560 / 384; background: var(--screen, #000); border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px -12px #0006; }
-.game .stage canvas, .game .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.game .stage canvas { image-rendering: pixelated; }
+/* (the stage's size the player's, play.js `fit`: a whole number of the device's pixels to each of the screen's dots) */
+.player .stage { position: relative; margin: 0 auto; background: var(--screen, #000); border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px -12px #0006; }
+.player .stage canvas, .player .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.player .stage canvas { image-rendering: pixelated; }
 /* the remake's mini view, where the page gives one: in the band at the top of the screen, placed by the title's inset */
-.game .stage .mini { position: absolute; overflow: hidden; border-radius: 3px; background: #000; pointer-events: none; }
-.game .stage .mini.toggle { pointer-events: auto; cursor: pointer; }
-.game .stage .mini canvas, .game .stage .mini img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: auto; }
-.game.remake .stage { background: #fff; }
-.game.remake .stage svg .key { cursor: pointer; }
-.game.remake .stage svg .key:hover rect { stroke: var(--gold, #a8801f); }
+.player .stage .mini { position: absolute; overflow: hidden; border-radius: 3px; background: #000; pointer-events: none; }
+.player .stage .mini.toggle { pointer-events: auto; cursor: pointer; }
+.player .stage .mini canvas, .player .stage .mini img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: auto; }
+.player.remake .stage { background: #fff; }
+.player.remake .stage svg .key { cursor: pointer; }
+.player.remake .stage svg .key:hover rect { stroke: var(--gold, #a8801f); }
 .options { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: center; font-size: 15px; color: var(--muted, #5d6475); margin: 14px 0; }
 #status.error { color: var(--alert, #9b3d2e); }
 #paper { display: block; width: 100%; height: auto; border-radius: 2px; box-shadow: 0 2px 8px #0005; }

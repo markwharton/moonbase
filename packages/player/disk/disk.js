@@ -15,12 +15,14 @@
 //   disk.write(name, bytes, meta)   a promise, kept when stored
 //   disk.remove(name)           a promise
 //   disk.written()              a promise: every write so far stored
+//   disk.failed = err => ...    told of a write or remove the backend could not store (the queue goes on)
 //   disk.name, disk.kept        the disk's name; whether its files outlast the page
+//   disk.where                  where they are kept, as the backend says ('this browser'), for the dialogs
 //
 // A disk's name says whose it is, so a title and a program can never share one: titleDisk(slug), a title's
 // player's, 'title/zoopak'; programDisk(name), one of the site's own programs', 'program/basic'.
 //
-// The backend is where a disk's files are kept: { kept, load(disk), put(disk, file), delete(disk, name) },
+// The backend is where a disk's files are kept: { kept, where, load(disk), put(disk, file), delete(disk, name) },
 // a file { name, bytes, meta, modified }. This browser's is local(); an account's will be the API's.
 import { local } from './local.js';
 import { memory } from './memory.js';
@@ -30,10 +32,12 @@ export async function openDisk(name, { backend } = {}) {
   if (!backend) { try { backend = await local(); } catch { backend = memory({ kept: false }); } }
   const files = new Map((await backend.load(name)).map(f => [f.name, f]));
   let queue = Promise.resolve();
-  const later = job => (queue = queue.then(job));
-  return {
+  // (each job stored in turn; one that fails is said (`failed`) and the next goes on, its own promise rejected for a
+  // caller that waits for it)
+  const later = job => { const p = queue.then(job); queue = p.catch(err => disk.failed?.(err)); p.catch(() => {}); return p; };
+  const disk = {
     name,
-    kept: backend.kept,
+    kept: backend.kept, where: backend.where ?? null, failed: null,
     list: () => [...files.values()].sort((a, b) => b.modified - a.modified).map(({ name, bytes, meta, modified }) => ({ name, size: bytes.length, modified, meta })),
     read: n => files.get(n)?.bytes ?? null,
     write(n, bytes, meta = {}) {
@@ -47,6 +51,7 @@ export async function openDisk(name, { backend } = {}) {
     },
     written: () => queue,
   };
+  return disk;
 }
 
 export const titleDisk = slug => `title/${slug}`;

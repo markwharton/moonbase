@@ -139,7 +139,8 @@ export function cardRoutines(title) {
     if (!f && c64 && at >= 0xa000 && at < 0xc000) throw new Error('a BASIC program (Zoopak\'s NOTEBOOK or ZOOTIME): not written yet in the remake');
     if (!f) throw new Error('no ROM routine at $' + hex4(at));
     engine = e;
-    Object.assign(cpu, { a: e.a, x: e.x, y: e.y, c: e.c, z: e.z, n: e.n, v: e.v });
+    // (the stack pointer as the call to the routine left it: the frames' place, less the call's two bytes)
+    Object.assign(cpu, { a: e.a, x: e.x, y: e.y, c: e.c, z: e.z, n: e.n, v: e.v, pc: at, sp: e.sp() - 2 & 0xff });
     // a routine that reads the keyboard (RDKEY) waits, with no key, and the step runs again
     const start = romFrom = cpu.cycles;
     const r = f(cpu);
@@ -150,6 +151,9 @@ export function cardRoutines(title) {
     e.delay += (cpu.cycles - start + 6) / CLOCK * 1000; e.cycles += cpu.cycles - start + 6;
     Object.assign(e, { a: cpu.a & 0xff, x: cpu.x & 0xff, y: cpu.y & 0xff, c: cpu.c, z: cpu.z, n: cpu.n });
     if (r === 'return') return r;   // (a routine that returns from its caller too: $E206 at a statement's end)
+    // a routine that goes on elsewhere, not back: DOS 3.3's error exit, from a command printed through COUT, to where
+    // DOS goes on (rom.js `dosError`)
+    if (r === false && cpu.pc !== at) return { to: cpu.pc };
   };
 
   // Where an address of the lifted code is: a label in a script. The scenes all run at $AD00,
@@ -199,10 +203,11 @@ export function cardRoutines(title) {
     return [name, 'L' + hex4(at)];
   };
   // an address the ROM's routine answers: above $D000, unless the card is read there and a script
-  // has its code there (Pieces of Eight's PO8:BLINK, over HPOSN and DRAW); on a Commodore 64, where
+  // has its code there (Pieces of Eight's PO8:BLINK, over HPOSN and DRAW), or below where rom.js answers DOS's own
+  // (INITIOHK, $A851) and no script has code; on a Commodore 64, where
   // the 6510's port shows the KERNAL ($E000 on) or BASIC ($A000 to $BFFF: Tell-A-Tale's numbers,
   // over MENU's code in the RAM under it)
-  const romAt = (e, a) => c64 ? (a >= 0xe000 ? (e.mem[1] & 2) !== 0 : a >= 0xa000 && a < 0xc000 ? (e.mem[1] & 3) === 3 : a === 0x73 || a === 0x79) : a >= 0xd000 && !(lc.read && labelled(e, a).length);
+  const romAt = (e, a) => c64 ? (a >= 0xe000 ? (e.mem[1] & 2) !== 0 : a >= 0xa000 && a < 0xc000 ? (e.mem[1] & 3) === 3 : a === 0x73 || a === 0x79) : a >= 0xd000 ? !(lc.read && labelled(e, a).length) : cpu.hooks.has(a) && !labelled(e, a).length;
   // the stir of START.SYSTEM's wait: its calls are no steps
   const stirring = step => toolkit.stir && step?.at >= toolkit.stir.from && step.at <= toolkit.stir.to;
   const emit = (e, ev, quiet) => { if (quiet) e.inside++; e.emit(ev); if (quiet) e.inside--; };
@@ -235,7 +240,16 @@ export function cardRoutines(title) {
     inputs(e, name, args); emit(e, unplaced(describe(name, [], e, undefined, undefined, a => e.mem[a])), stirring(step));
     const v = c64 && VECTORED[name], to = v && (e.mem[v[0]] | e.mem[v[0] + 1] << 8);
     if (v && to !== v[1]) { const [script, label] = find(e, to); e.callInside(script, label, x => { if (GIVES[name]) x.emit(result(name, { a: x.a, x: x.x, y: x.y, c: x.c })); }, step?.at == null ? undefined : (step.at + 2) & 0xffff); return; }
-    if (rom(e, at) === 'wait') return 'wait';
+    const r = rom(e, at);
+    if (r === 'wait') return 'wait';
+    // (gone on elsewhere: the code there run inside the step, the routine's return still on the stack, as the
+    // original's is, until that code drops it, as Pieces of Eight's handler ($93F0) does with a TXS to the frames
+    // under it, kept at their place for it (Engine.stackPage))
+    if (r?.to !== undefined) {
+      e.stackPage();
+      e.stack.push({ name: e.name, pc: e.pc, inside: true, ret: step?.at == null ? undefined : (step.at + 2) & 0xffff }); e.inside++;
+      return routines['goto-engine'](e, ['$' + hex4(r.to)], step);
+    }
     if (GIVES[name] && c64) e.emit(result(name, { a: e.a, x: e.x, y: e.y, c: e.c }));
   };
 
@@ -301,6 +315,8 @@ export function cardRoutines(title) {
         if (c64 && ENDS.has(a)) pullRegisters(e);   // the end of an interrupt: the registers back, then its RTI
         back(e); return;   // as its RTS: out of a routine it ends
       }
+      // (code the game has written since, a JMP: on through it, as Pieces of Eight's at $A6D8, into DOS's error exit)
+      if (!c64 && e.mem[a] === 0x4c && !labelled(e, a).length) return routines['goto-engine'](e, ['$' + hex4(e.mem[a + 1] | e.mem[a + 2] << 8)], step);
       e.enter(...find(e, a));
     },
   };

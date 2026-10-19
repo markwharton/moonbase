@@ -324,19 +324,32 @@ export class Engine {
     }
     const f = this.stack.pop(); if (a) this.a = this.flags(f.a); else [this.n, this.z, this.c, this.v] = f.flags;
   }
-  // the machine's own instructions a scene keeps. TSX gives the stack's place, as the
-  // original's stack pointer would be with these frames on it, and keeps the frames under
-  // it; TXS goes back to the frames kept at the place it is given (Detect-A-Pet's save and
+  // the stack's place, as the original's stack pointer would be with these frames on it: each
+  // frame its bytes, a call's two (its return address) and a push's one
+  sp() { return 0xff - this.stack.reduce((n, f) => n + (f.name === undefined ? 1 : f.half ? 1 : 2), 0) & 0xff; }
+  // the frames kept at their place, for a TXS to go back to, and their bytes in the stack page as
+  // the original's are there: a call's return address, high byte first from the bottom, as JSR
+  // pushes it (half of one pulled, its high byte), and a push's byte, PHP's as the 6502's (Pieces of Eight's DOS error
+  // handler, $93F0, reads the return address under its own to see who called)
+  stackPage() {
+    const sp = this.sp();
+    (this.stacks ??= new Map()).set(sp, this.stack.map(f => ({ ...f })));
+    let at = 0xff;
+    for (const f of this.stack) {
+      const r = f.ret ?? 0;
+      if (f.name === undefined) this.mem[0x100 + at--] = f.a ?? (f.flags ? f.flags[0] << 7 | f.flags[3] << 6 | 0x30 | f.flags[1] << 1 | f.flags[2] : 0);
+      else { this.mem[0x100 + at--] = r >> 8; if (!f.half) this.mem[0x100 + at--] = r & 0xff; }
+    }
+    return sp;
+  }
+  // the machine's own instructions a scene keeps. TSX gives the stack's place (`stackPage`); TXS
+  // goes back to the frames kept at the place it is given (Detect-A-Pet's save and
   // load keep the stack page and its pointer), and to none at any other, as the town's
   // resets the stack and drops every script called. SED and CLD set decimal mode, and SEI and
   // CLI the mask a Commodore 64's interrupt waits on (card.js). The rest (a byte that
   // is no instruction) change nothing the remake holds.
   asm(op) {
-    if (op === 'TSX') {
-      const sp = 0xff - this.stack.reduce((n, f) => n + (f.name === undefined ? 1 : f.half ? 1 : 2), 0) & 0xff;
-      (this.stacks ??= new Map()).set(sp, this.stack.map(f => ({ ...f })));
-      this.x = this.flags(sp);
-    }
+    if (op === 'TSX') this.x = this.flags(this.stackPage());
     if (op === 'TXS') {
       const kept = this.stacks?.get(this.x);
       this.stack = kept ? kept.map(f => ({ ...f })) : []; this.visited = null; this.inside = this.stack.filter(f => f.inside).length;

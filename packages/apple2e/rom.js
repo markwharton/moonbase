@@ -55,6 +55,9 @@ export function install(m) {
     0xfe2c: () => { const from = z(0x3c) | z(0x3d) << 8, to = z(0x3e) | z(0x3f) << 8, dest = z(0x42) | z(0x43) << 8; for (let i = 0; from + i <= to; i++) zw(dest + i, z(from + i)); },   // MOVE
     0xff3f: () => { c.p = z(0x48); c.a = z(0x45); c.x = z(0x46); c.y = z(0x47); },   // RESTORE
     0xff4a: () => { zw(0x45, c.a); zw(0x46, c.x); zw(0x47, c.y); zw(0x48, c.p); zw(0x49, c.sp); },   // SAVE
+    // DOS 3.3's INITIOHK, which points the output and input hooks back at DOS: here DOS is the ROM's own COUT, nothing to
+    // point (a ProDOS game's memory there its own)
+    0xa851: () => m.game.kind === 'dos33' ? undefined : false,
     0xfa62: () => { m.halted = 'reset'; }, 0xff59: () => { m.halted = 'monitor'; }, 0xff69: () => { m.halted = 'monitor'; },
     // Applesoft hi-res
     0xf3d8: () => { m.io(0xc057); m.io(0xc050); m.io(0xc055); m.io(0xc052); zw(0xe6, 0x40); hclr(0); },   // HGR2
@@ -85,8 +88,21 @@ export function install(m) {
   function scroll() { const l = z(0x20), w = z(0x21), t = z(0x22), b = z(0x23); for (let r = t; r + 1 < b; r++) for (let x = l; x < l + w; x++) zw(rowBase(r) + x, z(rowBase(r + 1) + x)); for (let x = l; x < l + w; x++) zw(rowBase(b - 1) + x, 0xa0); }
   // DOS 3.3 watches what is printed for a control-D at the start of a line, and takes what
   // follows up to the return as a command: BLOAD and BSAVE are answered from the disk's files, BSAVE and
-  // DELETE through the machine's put and remove, so the player's disk hears of them (saves.js)
+  // DELETE through the machine's put and remove, so the player's disk hears of them (saves.js). A BLOAD of a
+  // file not there is DOS's error 6, FILE NOT FOUND (`dosError`).
   let command = null;
+  // A DOS error, as DOS 3.3's ERRHNDLR ($A6D2) takes it: its code kept at ASAVED ($AA5C), and the stack pointer as
+  // PREP4DOS kept it on the command's way in (STKSAVED, $AA59: the pointer as the program's JSR to COUT left it,
+  // on the return that ended the command); then on at $A6D8, where a program that handles DOS's errors has put
+  // its own JMP (Pieces of Eight's, to $93F0, at $9477). Where none has, DOS's own: a return, the bell, a return,
+  // the error's words and a return (PRDOSERR), and on.
+  function dosError(code, words) {
+    zw(0xaa5c, code); zw(0xaa59, c.sp);
+    m.log('DOS error ' + code + ': ' + words);
+    if (z(0xa6d8) === 0x4c) { c.pc = 0xa6d8; return 'error'; }
+    cout(0x8d); bell(); cout(0x8d); for (const ch of words) cout(ch.charCodeAt(0) | 0x80); cout(0x8d);
+    return true;
+  }
   function dos(ch) {
     if (command === null) { if (ch === 0x84 && z(0x24) === 0) command = ''; return command !== null; }
     if (ch !== 0x8d) { command += String.fromCharCode(ch & 0x7f); return true; }
@@ -95,7 +111,7 @@ export function install(m) {
     if (!m2) return true;
     const [name, ...opts] = m2[2].split(','), at = opts.map(o => /^A\$?([0-9A-F]+)/i.exec(o.trim())).find(Boolean), len = opts.map(o => /^L\$?([0-9A-F]+)/i.exec(o.trim())).find(Boolean);
     const verb = m2[1].toUpperCase(), f = m.file(name.trim());
-    if (verb === 'BLOAD') { if (!f) { m.log('BLOAD ' + name + ': not found'); return true; } const a = at ? parseInt(at[1], 16) : f.aux; for (let i = 0; i < f.body.length; i++) zw(a + i, f.body[i]); m.log('BLOAD', name.trim(), '$' + a.toString(16)); }
+    if (verb === 'BLOAD') { if (!f) return dosError(6, 'FILE NOT FOUND'); const a = at ? parseInt(at[1], 16) : f.aux; for (let i = 0; i < f.body.length; i++) zw(a + i, f.body[i]); m.log('BLOAD', name.trim(), '$' + a.toString(16)); }
     else if (verb === 'BSAVE') { const a = at ? parseInt(at[1], 16) : 0, n = len ? parseInt(len[1], 16) : 0; const body = new Uint8Array(n); for (let i = 0; i < n; i++) body[i] = z(a + i); m.put('/DISK/' + name.trim().toUpperCase(), { volume: 'DISK', path: name.trim().toUpperCase(), type: 'B', aux: a, body }); m.log('BSAVE', name.trim()); }
     else if (verb === 'DELETE') { m.remove('/DISK/' + name.trim().toUpperCase()); }
     return true;
@@ -107,7 +123,8 @@ export function install(m) {
   // of the line above, unless at the window's top; the bell; any other control nothing. Y is
   // kept at YSAV1 ($35), and A and Y are as they came.
   function cout(ch) {
-    if (m.game.kind === 'dos33' && dos(ch)) return;
+    // (a DOS command printed, taken by DOS; an error in it goes on where DOS's error exit goes, not back)
+    if (m.game.kind === 'dos33') { const taken = dos(ch); if (taken === 'error') return false; if (taken) return; }
     zw(0x35, c.y);
     if (ch >= 0xa0) ch &= z(0x32);
     if (ch >= 0xa0 || ch < 0x80) { const y = z(0x24); zw((z(0x28) | z(0x29) << 8) + y, ch); zw(0x24, (y + 1) & 0xff); if (z(0x24) >= z(0x21)) cr(); }

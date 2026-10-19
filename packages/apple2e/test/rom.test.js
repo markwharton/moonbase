@@ -8,10 +8,10 @@ import assert from 'node:assert/strict';
 import { install } from '@moonbase-machines/apple2e/rom.js';
 
 // a machine of nothing but memory and a processor's registers, with the routines on its hooks
-function machine() {
+function machine(kind = 'prodos') {
   const mem = new Uint8Array(0x10000);
   const cpu = { hooks: new Map(), cycles: 0, a: 0, x: 0, y: 0, z: 0, c: 0, n: 0, v: 0, read: a => mem[a], write: (a, v) => { mem[a] = v & 0xff; }, nz(v) { this.n = v >> 7 & 1; this.z = v ? 0 : 1; } };
-  install({ cpu, game: { kind: 'prodos' }, sw: { lcRead: 0 }, io: () => 0, file: () => null, files: new Map(), log() {}, halted: false });
+  install({ cpu, game: { kind }, sw: { lcRead: 0 }, io: () => 0, file: () => null, files: new Map(), log() {}, clicks: [], halted: false });
   const call = (at, regs = {}) => { Object.assign(cpu, regs); return cpu.hooks.get(at)(cpu); };
   mem[0xe6] = 0x20;   // HPAG: hi-res page 1
   return { mem, cpu, call };
@@ -131,4 +131,30 @@ test('COUT puts the character at the cursor and moves the cursor on', () => {
   call(HOME);
   call(COUT, { a: 0xc1 });   // A
   assert.equal(mem[0x400], 0xc1); assert.equal(mem[0x24], 1);
+});
+
+// a DOS command as a program prints it: control-D, the command, a return; what the return's COUT gives back
+function command(call, text) {
+  call(COUT, { a: 0x84 });
+  for (const ch of text) call(COUT, { a: ch.charCodeAt(0) | 0x80 });
+  return call(COUT, { a: 0x8d });
+}
+
+test('a BLOAD of a file not there goes on to a program\'s error handler at $A6D8, as DOS\'s FILE NOT FOUND', () => {
+  const { mem, cpu, call } = machine('dos33');
+  Object.assign(mem, { 0x20: 0, 0x21: 40, 0x22: 0, 0x23: 24, 0x32: 0xff, 0xa6d8: 0x4c, 0xa6d9: 0xf0, 0xa6da: 0x93 });   // JMP $93F0
+  call(HOME);
+  cpu.sp = 0xe9;
+  assert.equal(command(call, 'BLOAD NOWHERE,A$2000'), false);   // no return from the COUT: on at the PC
+  assert.equal(cpu.pc, 0xa6d8);
+  assert.deepEqual([mem[0xaa5c], mem[0xaa59]], [6, 0xe9]);   // ASAVED the error, STKSAVED the stack as COUT's caller left it
+});
+
+test('a BLOAD of a file not there, with no handler, prints FILE NOT FOUND and returns', () => {
+  const { mem, call } = machine('dos33');
+  Object.assign(mem, { 0x20: 0, 0x21: 40, 0x22: 0, 0x23: 24, 0x32: 0xff });
+  call(HOME);
+  assert.notEqual(command(call, 'BLOAD NOWHERE'), false);
+  const row = r => String.fromCharCode(...mem.subarray(0x400 + (r & 7) * 0x80 + (r >> 3) * 0x28, 0x400 + (r & 7) * 0x80 + (r >> 3) * 0x28 + 14)).replace(/[\x80-\xff]/g, ch => String.fromCharCode(ch.charCodeAt(0) & 0x7f));
+  assert.equal(row(2), 'FILE NOT FOUND');   // after the return, the bell and a return
 });

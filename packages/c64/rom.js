@@ -15,9 +15,9 @@
 // character set is moonbase's own 5 by 7 font (@moonbase-machines/charset/font.js), the Apple's: a game
 // that draws in its own characters (Zoopak's, from RAM) is not touched by it.
 //
-// The titles it runs, each held to the remake and to Commodore's ROMs, are `STANDS_IN`: Zoopak,
-// and Goldfields, whose Blitz! code calls BASIC's ROM as its library (basic-rom.js); and Crayon
-// on the 64, Moonbase's own, held to Commodore's ROMs.
+// The titles it runs, each held to the remake and to Commodore's ROMs: Zoopak, and Goldfields, whose
+// Blitz! code calls BASIC's ROM as its library (basic-rom.js); and Crayon on the 64, Moonbase's own,
+// held to Commodore's ROMs.
 import { install as kernal, kernalByte, VIC, VECTORS } from './kernal.js';
 import { CONSTANTS } from './float.js';
 import { chargen } from '@moonbase-machines/charset/chargen.js';
@@ -26,8 +26,6 @@ import { lines, direct, crunch, store, list, program as programLines, dataItems 
 import { instantiate, evaluator } from './basic-compile.js';
 import { Basic } from './basic.js';
 import { BasicError, ERRORS, val, scanNumber } from './numbers.js';
-
-export const STANDS_IN = ['zoopak', 'goldfields', 'crayon64', 'crayon64-studio'];
 
 const BYTES = {
   0xfffa: 0x43, 0xfffb: 0xfe,   // NMI: $FE43

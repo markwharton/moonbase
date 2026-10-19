@@ -1,6 +1,8 @@
 // The player's parts that every way to play shares (play.js): the keys as each machine takes them (keys.js), the
-// saves on the player's disk (saves.js), a write the disk's backend cannot store (disk/disk.js); and no title named in
-// the packages' code, only in their comments, as examples.
+// saves on the player's disk (saves.js), a write the disk's backend cannot store (disk/disk.js); the settings store
+// typed against its declarations (settings.js) and the provider giving a page its disks and settings on one backend
+// (provider.js); the package knowing nothing of an address and keeping nothing in the browser itself; and no
+// title named in the packages' code, only in their comments, as examples.
 //
 //   node --test test/*.test.js
 import { test } from 'node:test';
@@ -11,6 +13,8 @@ import { code, named } from '@moonbase-machines/player/keys.js';
 import { savesFor } from '@moonbase-machines/player/saves.js';
 import { openDisk } from '@moonbase-machines/player/disk/disk.js';
 import { memory } from '@moonbase-machines/player/disk/memory.js';
+import { settingsStore, check } from '@moonbase-machines/player/settings.js';
+import { provider, settingsDisk } from '@moonbase-machines/player/provider.js';
 import { Drive } from '@moonbase-machines/c64/drive.js';
 import { make } from '@moonbase-machines/c64/d64.js';
 
@@ -57,6 +61,76 @@ test('a write the backend cannot store is said, and the writes after it are stor
   assert.deepEqual(said, ['full']);
   refuse = false;
   assert.deepEqual([...(await openDisk('title/two', { backend })).read('GOOD')], [2]);
+});
+
+// (what the console is told, for the tests of what is refused)
+const warned = async f => { const said = [], warn = console.warn; console.warn = m => said.push(m); try { await f(); } finally { console.warn = warn; } return said; };
+
+test('a setting\'s type: on or off, or one of fixed values', () => {
+  assert.ok(check('boolean', false) && !check('boolean', 'off') && check(['a', 'b'], 'a') && !check(['a', 'b'], 'c'));
+  assert.throws(() => check('text', 'x'), /no such type/);
+});
+
+const SOUND = { name: 'sound', type: 'boolean', default: true, owner: 'person', words: 'Sound' };
+const MINI = { name: 'mini', type: ['', 'live', 'pictures'], default: '', owner: 'person', words: 'Mini view', labels: ['Off', 'Live', 'Pictures'] };
+const OLD = { name: 'old-style', type: 'boolean', default: false, owner: 'person', words: 'Old style text' };
+const FIXED = { name: 'fixed', type: 'boolean', default: false, owner: 'person', words: 'Bugs fixed' };
+
+test('a setting by its declaration: the page\'s fixed value, else the visit\'s, else the kept one, else its default; offered unless hidden or fixed', async () => {
+  const backend = memory(), person = () => openDisk(settingsDisk('person'), { backend });
+  const first = settingsStore({ disks: { person: await person() } });
+  assert.equal(first.get(SOUND), true, 'its default');
+  await first.set(SOUND, false); await first.set(MINI, 'pictures');
+  const visit = def => ({ 'old-style': true, mini: 'live', sound: false })[def.name];
+  const again = settingsStore({ disks: { person: await person() }, visit, fixed: { fixed: true }, hidden: ['mini'] });
+  assert.equal(again.get(SOUND), false, 'the visit\'s, and kept');
+  assert.equal(again.get(MINI), 'live', 'the visit\'s over the kept');
+  assert.equal(again.get(OLD), true, 'the visit\'s on');
+  assert.equal(again.get(FIXED), true, 'the page\'s fixed value over all');
+  assert.deepEqual([SOUND, MINI, FIXED].map(again.offered), [true, false, false]);
+  assert.deepEqual(JSON.parse(new TextDecoder().decode((await person()).read('settings'))), { sound: false, mini: 'pictures' }, 'the visit\'s values never kept');
+});
+
+test('a setting\'s value is checked: a visit\'s value not of the type refused and said once, a kept value not of the type its default, a set of the wrong type thrown', async () => {
+  const backend = memory(), disk = await openDisk(settingsDisk('person'), { backend });
+  disk.write('settings', new TextEncoder().encode(JSON.stringify({ sound: 'loud', mini: 'live' })));
+  const store = settingsStore({ disks: { person: disk }, visit: def => ({ mini: 'huge', 'old-style': 'maybe' })[def.name] });
+  const said = await warned(() => { assert.equal(store.get(SOUND), true, 'the kept value refused: its default'); assert.equal(store.get(MINI), 'live', 'huge refused: the kept'); store.get(MINI); assert.equal(store.get(OLD), false); });
+  assert.deepEqual(said, ['sound: the kept "loud" is not on or off; its default used', 'mini: "huge" for this visit refused: not one of nothing, live, pictures', 'old-style: "maybe" for this visit refused: not on or off']);
+  assert.throws(() => store.set(SOUND, 'off'), /sound cannot be "off": not on or off/);
+  assert.throws(() => store.set(MINI, 'big'), /not one of nothing, live, pictures/);
+  assert.throws(() => store.get({ ...SOUND, owner: 'teacher' }), /no store for the owner teacher/);
+  assert.throws(() => store.get({ name: 'bad', type: 'boolean', default: 'on', owner: 'person' }), /default "on" is not on or off/);
+  assert.throws(() => settingsStore({ disks: { person: disk }, fixed: { sound: 'off' } }).get(SOUND), /fixed at "off"/);
+});
+
+test('the provider: every disk on the one backend it is given, and the settings kept there too', async () => {
+  const backend = memory();
+  const { disk, settings } = await provider({ backend, visit: def => def.name === 'sound' ? false : undefined, hidden: ['vectors'] });
+  const title = await disk('title/one');
+  await title.write('SAVED', [1]);
+  await settings.set(MINI, 'live');
+  assert.deepEqual((await backend.load('title/one')).map(f => f.name), ['SAVED']);
+  assert.deepEqual((await backend.load('settings/person')).map(f => f.name), ['settings']);
+  assert.equal(settings.get(SOUND), false);
+  assert.equal(settings.offered({ name: 'vectors', type: 'boolean', default: false, owner: 'person' }), false);
+});
+
+// the package's own code knows nothing of an address and keeps nothing in the browser: the page gives it everything
+// (bin/moonbase-play.mjs is a page of its own, the one place an address is read, by that page)
+test('the player, its engines, its settings and its provider know no address and no browser storage; the player opens no disk', () => {
+  const own = ['play.js', 'settings.js', 'provider.js', 'engines/original.js', 'engines/scenes.js', 'saves.js', 'keys.js', 'parts.js', 'disk/disk.js', 'disk/dialogs.js'];
+  const found = [];
+  for (const f of own) {
+    const lines = readFileSync(join(packages, 'player', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, '')).split('\n');
+    lines.forEach((l, i) => {
+      const c = l.replace(/(^|\s)\/\/.*$/, '');
+      if (/location\.(search|hash|href)|URLSearchParams|localStorage|sessionStorage/.test(c)) found.push(`${f}:${i + 1}`);
+      if (/openDisk/.test(c) && !['provider.js', 'disk/disk.js'].includes(f)) found.push(`${f}:${i + 1} opens a disk`);
+      if (/\blocal\(/.test(c) && f !== 'provider.js') found.push(`${f}:${i + 1} chooses a backend`);
+    });
+  }
+  assert.deepEqual(found, []);
 });
 
 // the titles, by name and by address; the packages' code, their comments taken out

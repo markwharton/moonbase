@@ -1,10 +1,14 @@
 // The Remake's engine for a title of scenes, 'card' or 'vector' (play.js hands it the game): its scripts on the
 // remake's engine (remake/engine.js), its events drawn by the view on the stage, the view the machine's (an Apple's
-// hi-res page for a card title, CardView; a Commodore 64's, C64View; a vector title's pictures and text, View); its own
-// control on the options line, the old style text; the mini view where the page gives one and the title has a place
-// for it. A run's events are drawn one after another, with a moment for each sound and flash, so that what the
+// hi-res page for a card title, CardView; a Commodore 64's, C64View; a vector title's pictures and text, View); the
+// settings it acts on (play.js `game.setting`): the old style text, where its view draws text of its own (View); the
+// mini view, where the page gives one and the title has a place for it. A run's events are drawn one after another, with a moment for each sound and flash, so that what the
 // original took time over takes time here too.
 import { makeEngine } from '../remake/load.js';
+
+// the settings this engine acts on (play.js `setting`): the old style text, a vector title's; the mini view
+const OLD_STYLE = { name: 'old-style', type: 'boolean', default: false, owner: 'person', words: 'Old style text' };
+const MINI = { name: 'mini', type: ['', 'live', 'pictures'], default: '', owner: 'person', words: 'Mini view', labels: ['Off', 'Live', 'Pictures'] };
 import { Speaker } from '../audio.js';
 import { SID } from '@moonbase-machines/c64/sid.js';
 import { matrixOf } from '@moonbase-machines/c64/kernal.js';
@@ -18,8 +22,7 @@ export async function play(g) {
   const { title, scripts, game: disk, stage, status, fail, saves, $ } = g;
   const c64 = disk.kind === 'c64';
   stage.innerHTML = `<svg id="screen" preserveAspectRatio="xMidYMid meet" tabindex="0" aria-label="The game's screen"></svg>`;
-  g.control('<label><input type="checkbox" id="old-style"> Old style text</label>');
-  const svg = $('screen');
+  const svg = $('screen'), drawn = c64 ? 'c64' : title.engine === 'card' ? 'card' : 'vector';
 
   // its view's own drawing, for a title that has one (its title.js `view`, load.js)
   const extra = title.viewSteps ?? {};
@@ -35,52 +38,49 @@ export async function play(g) {
   const engine = makeEngine(title, scripts);
   if (title.files) saves.keep(title.files);
   const queue = [];
-  // The view, and every event it has drawn, so that it can be drawn again from the start when
-  // the old style text is turned on or off. The choice is kept in this browser.
-  const oldStyleBox = $('old-style'), history = [];
-  const remember = { get() { try { return localStorage.getItem('remake-old-style') === '1'; } catch { return false; } }, set(v) { try { localStorage.setItem('remake-old-style', v ? '1' : '0'); } catch {} } };
-  oldStyleBox.checked = remember.get() || new URLSearchParams(location.search).has('old-style');   // ?old-style, for a screenshot
+  // The view, and every event it has drawn, so that it can be drawn again from the start when the old style text is
+  // turned on or off: a setting only where the view draws text of its own, a vector title's (View), the others drawing
+  // the machine's own screen
+  const history = [];
+  const oldStyle = drawn === 'vector' ? g.setting(OLD_STYLE) : { value: false, on() { return this; } };
   let onView = null;   // (the mini view's, given each view made)
-  const makeView = () => { svg.replaceChildren(); const v = c64 ? new C64View(svg, { engine, chargen }) : title.engine === 'card' ? new CardView(svg, { engine, inset: g.mini ? title.inset : null }) : new View(svg, { disk, volume: Object.keys(disk.volumes)[0], engine, extra }); v.oldStyle = oldStyleBox.checked; onView?.(v); return v; };
+  const makeView = () => { svg.replaceChildren(); const v = drawn === 'c64' ? new C64View(svg, { engine, chargen }) : drawn === 'card' ? new CardView(svg, { engine, inset: g.mini ? title.inset : null }) : new View(svg, { disk, volume: Object.keys(disk.volumes)[0], engine, extra }); v.oldStyle = oldStyle.value; onView?.(v); return v; };
   let view = makeView();
   engine.on(e => queue.push(view.snapshot({ ...e })));
   // The mini view, where the page gives one (`mini`) and the title has a place for it (its title.js `inset`): Off,
-  // Live or Pictures, the choice kept in this browser; shown in the band at the top of the screen while the band is
-  // there. A picture only: the game's screen otherwise as it is
-  const miniBox = $('mini');
+  // Live or Pictures, a setting; shown in the band at the top of the screen while the band is there. A picture only:
+  // the game's screen otherwise as it is
   if (title.inset && g.mini) {
-    miniBox.parentElement.hidden = false;
-    try { miniBox.value = localStorage.getItem('remake-mini') ?? ''; } catch {}
+    const choice = g.setting(MINI);
     const { top, bottom, view: [left, right] } = title.inset, at = document.createElement('div');
     at.className = 'mini'; at.hidden = true;
     Object.assign(at.style, { left: `${left / 5.6}%`, top: `${top / 3.84}%`, width: `${(right - left) / 5.6}%`, height: `${(bottom - top + 1) / 3.84}%` });
     svg.parentElement.append(at);
     const mini = await g.mini(at, { memory: () => engine.mem });
     // (each view's painting followed by the mini view shown or not, as the band is there or not)
-    onView = v => { v.insetOn = !!miniBox.value; const prompts = v.prompts.bind(v); v.prompts = () => { prompts(); at.hidden = !(miniBox.value && v.banded); }; };
+    onView = v => { v.insetOn = !!choice.value; const prompts = v.prompts.bind(v); v.prompts = () => { prompts(); at.hidden = !(choice.value && v.banded); }; };
     onView(view);
-    const show = () => { view.insetOn = !!miniBox.value; mini.mode(miniBox.value); view.prompts(); };
-    miniBox.addEventListener('change', () => { try { localStorage.setItem('remake-mini', miniBox.value); } catch {} show(); });
+    const show = () => { view.insetOn = !!choice.value; mini.mode(choice.value); view.prompts(); };
+    choice.on(show);
     show();
   }
-  oldStyleBox.addEventListener('change', () => {
-    remember.set(oldStyleBox.checked);
+  oldStyle.on(() => {
     view = makeView();
     for (const e of history) view.apply(e);
     view.prompts();
   });
 
-  // the sound: the original's are off until the teacher turns them on, at the engine's sound flag.
-  // A title that keeps the original's time (a card title's, Engine.time) clicks the speaker as
-  // the original did, and the clicks are played as the emulator plays them (audio.js), the
-  // box the sound's on and off.
+  // the sound: a title that keeps the original's time (a card title's, Engine.time) clicks the speaker as the original
+  // did, and the clicks are played as the emulator plays them (audio.js); a vector title's tones play where its own
+  // sound flag is on, the teacher's setting in the game, as on the original. The player's Sound setting (play.js) is
+  // the speaker, on or off, for both.
   const speaker = engine.timed ? new Speaker() : null;
-  let sounding = !!speaker;
+  let sounding = true;
   const hear = () => { if (!c64) speaker?.feed(sounding ? engine.clicks : [], engine.cycles); engine.clicks.length = 0; };
   const V = title.map?.vars ?? { sound: 0, soundOn: 0 };
   let audio = null;
   const tone = (from, to, ms) => {
-    if (!(engine.mem[V.sound] & V.soundOn)) return;
+    if (!sounding || !(engine.mem[V.sound] & V.soundOn)) return;
     audio ??= new AudioContext();
     const o = audio.createOscillator(), gain = audio.createGain(), t = audio.currentTime;
     o.type = 'square'; o.frequency.setValueAtTime(from, t); o.frequency.linearRampToValueAtTime(to, t + ms / 1000);
@@ -193,16 +193,14 @@ export async function play(g) {
     // pressed
     keys(list) { if (c64) engine.clock.ahead.push(...list); else for (const k of list) press(k); },
     start() { audio?.resume(); speaker?.start(); },
-    // the Sound box: the speaker's clicks, where the title keeps the original's time; else the game's own sound flag
-    sound(on) { if (speaker) sounding = on; else engine.mem[V.sound] = on ? V.soundOn : 0; },
-    soundOn: !!speaker,
+    sound(on) { sounding = on; },   // (the player's speaker: play.js)
     quick(on) { quick = on; },
     // A route the page gives (`route`, a workshop's pilots' route), played first as the pilots play it, each key when
     // the game waits for one, off the clock, so that it goes where it went on both sides; then the game goes on as
     // usual
     route({ route, name, keys: { expand, give, petscii, pollsAt } }) {
       title.seed = route.seed;   // (the random numbers from the route's seed, as the pilots have them)
-      if (route.printer && title.printer) { title.printer.on = true; $('printer').checked = true; }
+      if (route.printer && title.printer) { title.printer.on = true; const box = $('printer'); if (box) box.checked = true; }
       status.textContent = 'Playing the route ' + name + '.';
       // (on a Commodore 64 a key behind the one pressed goes into the KERNAL's buffer, as the pilots hold a key)
       const side = { press: k => engine.press(k), also: k => { const m = engine.mem, put = v => { if (m[0xc6] < 10) { m[0x277 + m[0xc6]] = v; m[0xc6]++; } }; if (engine.keys.length) put(engine.keys.shift()); put(k); } };

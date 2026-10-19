@@ -5,6 +5,8 @@
 export * as play from './play.js';
 export * as keys from './keys.js';
 export * as saves from './saves.js';
+export * as settings from './settings.js';
+export * as provider from './provider.js';
 export * as enginesOriginal from './engines/original.js';
 export * as enginesScenes from './engines/scenes.js';
 export * as audio from './audio.js';

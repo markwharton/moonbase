@@ -10,6 +10,9 @@
 // and `studies`, files of its own for a Commodore 64 game's disk, a name to its bytes in base64, in the drive, not kept.
 import { Speaker } from '../audio.js';
 
+// the setting the Apple's engine acts on (play.js `setting`): its pictures drawn as vectors over the screen
+const VECTORS = { name: 'vectors', type: 'boolean', default: false, owner: 'person', words: 'Draw the pictures as vectors' };
+
 export async function play(g) {
   g.stage.innerHTML = '<svg id="vector" viewBox="0 0 140 192" preserveAspectRatio="none"></svg><canvas id="screen" width="560" height="384" tabindex="0"></canvas>';
   const canvas = g.stage.querySelector('canvas'), ctx = canvas.getContext('2d'), layer = g.stage.querySelector('#vector');
@@ -19,12 +22,11 @@ export async function play(g) {
 // An Apple II game: the machine, the canvas, the keys, and the hooks for the vectors. With Apple's
 // ROMs and the game's disk images, where the page gives them (`roms`), it is line 1, the Apple itself booting the
 // disks; without them, moonbase's (line 2), the game started at once.
-async function apple({ game, saves, roms: makers, status, control, $ }, { canvas, ctx, layer, speaker }) {
+async function apple({ game, saves, roms: makers, status, setting }, { canvas, ctx, layer, speaker }) {
 const [{ Machine }, { placed }, { screen }, { shapes }, { elements }] = await Promise.all([
   import('@moonbase-machines/apple2e/machine.js'), import('@moonbase-machines/apple2e/prodos.js'),
   import('@moonbase-machines/apple2e/screen.js'), import('@moonbase-machines/vector/pictures.js'), import('@moonbase-machines/vector/svg.js')]);
-control('<label><input type="checkbox" id="vectors"> Draw the pictures as vectors</label>');
-const vectorToggle = $('vectors');
+const vectors = setting(VECTORS);
 // the title's saves on its own volume, the player's disk's (play.js `saves`): on line 2 the machine's files; on line 1
 // written onto that volume's disk before it boots, and kept as the title's DOS writes it
 const saving = saves.data;
@@ -73,9 +75,9 @@ function frame() {
   speaker.feed(sound ? m.clicks : [], m.cpu.cycles); m.clicks.length = 0;
   if (!hooked) hook();
   const text = m.sw.text;
-  screen(m, rgba, { cols, owner: vectorToggle.checked && layer.innerHTML ? m.owner : null });
+  screen(m, rgba, { cols, owner: vectors.value && layer.innerHTML ? m.owner : null });
   ctx.putImageData(image, 0, 0);
-  layer.style.visibility = vectorToggle.checked && !text ? 'visible' : 'hidden';
+  layer.style.visibility = vectors.value && !text ? 'visible' : 'hidden';
   status.textContent = m.halted ? 'The game has stopped: ' + m.halted + '.' : (m.idle > 2000 ? 'Waiting for a key.' : 'Running.');
   requestAnimationFrame(frame);
 }
@@ -86,7 +88,7 @@ return {
   run() { canvas.focus(); frame(); },
   press(k) { console.log('key', k, 'at pc $' + m.cpu.pc.toString(16)); m.press(k); },
   start() { speaker.start(); },
-  sound(on) { sound = on; }, soundOn: true,
+  sound(on) { sound = on; },
   engine: m,
 };
 }
@@ -144,7 +146,7 @@ async function c64(g, { canvas, layer, speaker }) {
     press(k) { m.type(String.fromCharCode(k)); },   // (into the KERNAL's buffer, as typed)
     key(e) { for (const f of listeners[e.type]) f(e); },
     start() { speaker.start(); },
-    sound(on) { sound = on; }, soundOn: true,
+    sound(on) { sound = on; },
     engine: m,
     // the disk as it now stands, its own files and those saved: a .d64 that VICE or a real 64 can use
     // (@moonbase-machines/c64/d64.js `add`)

@@ -1,11 +1,13 @@
 // The player: one way in for every title and every way to play it, the Original (the game's own disk on the machine
 // it was made for) and the Remake (its scenes on the remake's engine, or the title's own engine). The player makes its
 // part of the page and owns it, the same for all: the section and its classes, the stage and its size, the options
-// line and the status, the keys, the sound, the printer, the saves on the player's disk, and what the page asks of it;
-// the engine plays the game on the stage and does nothing of the page's.
+// line and the status, the keys, the sound, the printer, the saves on the title's disk, and what the page asks of it;
+// the engine plays the game on the stage and does nothing of the page's. The page tells the player everything: the
+// disk and the settings are the page's to give (its provider, provider.js), and the player reads no address and
+// keeps nothing in the browser itself.
 //
-//   await play({ way, slug, title, data, root, disk, backend, preview, words, screen, watch, claim, pace, route, mini,
-//                roms, studies, downloadDisk })
+//   await play({ way, slug, title, data, root, disk, settings, preview, words, screen, watch, claim, pace, keys,
+//                route, mini, roms, studies, downloadDisk })
 //     way          'original' or 'remake' (the default)
 //     slug         the title's name in addresses: its section's class, its disk
 //     title        the title's folder, an absolute URL (title.js, its scenes, compiled/, its own modules), where it
@@ -13,8 +15,8 @@
 //     data         its game's data, an absolute URL (<name>.json: its disks' files, its kind, its saves), or for a
 //                  title of its own engine the folder its data is in
 //     root         the page's section the player is made in
-//     disk         the title's player's disk (disk/disk.js); else the player opens it, `title/<slug>`, on `backend`
-//                  where the page gives one (the browser's own, unless it does)
+//     disk         the title's disk (disk/disk.js `openDisk`, `title/<slug>`), the page's to open where it keeps files
+//     settings     the person's settings, the page's typed store (settings.js): each declared setting's value, kept
 //     preview      the preview's build: what only it has may be used
 //     words        the page's words the player shows: { printer: { line, print, tear } }
 //     screen       [width, height], the screen's shape in its own dots where the page draws its own over it
@@ -25,6 +27,7 @@
 //     pace         how much of the original's waits: 1 all (the default), 0 none, between a part of each; a number or
 //                  a function, read at each wait
 //   and what only a workshop has, given by its pages, never looked for here:
+//     keys         keys to press at the start, by name (space, return, left...), to go straight to a scene
 //     route        a route to play first, { name, route, keys }: its keys, and the pilots' key handling
 //     mini         a mini view for a title with an `inset`, (at, { memory }) => { mode(m) }
 //     roms         the makers' ROMs this machine has (engines/original.js; a Commodore 64 remake's { chargen })
@@ -32,17 +35,18 @@
 //     downloadDisk a Commodore 64 game's disk offered to download, with what is saved on it
 //
 // An engine (engines/original.js, engines/scenes.js, or the title's own, its title.js `engine` a module in its folder)
-// exports `play(game)`: given `game`, the player's own for it (below), it makes what it draws on the stage and returns
+// exports `play(game)`: given `game`, the player's own for it (below), it declares the settings it acts on
+// (`game.setting(declaration)`, settings.js, each shown only so), makes what it draws on the stage and returns
 // its handle, or nothing where it cannot start (and has said why in the status):
-//   { run(), press(k)?, key(e, k)?, keys(list)?, route(route)?, start()?, sound(on)?, soundOn?, quick(on)?,
+//   { run(), press(k)?, key(e, k)?, keys(list)?, route(route)?, start()?, sound(on)?, quick(on)?,
 //     engine?, diskImage()? }
 // run() starts it; press(k) a key, the machine's code (none for a title of its own engine with no machine's keys,
 // which reads the keyboard itself); key(e, k), for an engine that reads the keyboard itself, each
-// keydown and keyup with its code (undefined where the machine has none); keys(list), ?keys= at the start; route, the
-// page's route; start(), at the player's first gesture (sound may start only then); sound(on) and soundOn, the
-// Sound box; quick(on) the game at full speed; engine, what `watch` gives a page; diskImage(), the disk to download.
+// keydown and keyup with its code (undefined where the machine has none); keys(list), the page's `keys` at the start;
+// route, the page's route; start(), at the player's first gesture (sound may start only then); sound(on), the
+// player's speaker on or off (the Sound setting; a game's own sound setting stays the game's); quick(on) the game at
+// full speed; engine, what `watch` gives a page; diskImage(), the disk to download.
 import { titleOf, loadTitle, read } from './remake/load.js';
-import { openDisk, titleDisk } from './disk/disk.js';
 import { savesFor } from './saves.js';
 import { code, named } from './keys.js';
 import { paperBox, phoneKeys, KEYS_MARKUP } from './parts.js';
@@ -50,24 +54,44 @@ import { paperBox, phoneKeys, KEYS_MARKUP } from './parts.js';
 // each machine's screen, in its own dots: an Apple's hi-res page, a Commodore 64's frame, border and all
 const SCREENS = { prodos: [280, 192], dos33: [280, 192], c64: [384, 272] };
 const ENGINES = { original: () => import('./engines/original.js'), card: () => import('./engines/scenes.js'), vector: () => import('./engines/scenes.js') };
+// the settings the player itself acts on (settings.js): the speaker; a Commodore 64's printer; a title's version with
+// its bugs fixed
+const SOUND = { name: 'sound', type: 'boolean', default: true, owner: 'person', words: 'Sound' };
+const PRINTER = { name: 'printer', type: 'boolean', default: true, owner: 'person', words: 'Printer' };
+const FIXED = { name: 'fixed', type: 'boolean', default: false, owner: 'person', words: 'Bugs fixed', title: 'The game with its bugs fixed: it starts again' };
 
 export async function play(options) {
-  const { way = 'remake', slug, root, preview = false, words } = options;
+  const { way = 'remake', slug, root, disk, settings, preview = false, words } = options;
   root.classList.add('player', way);
   if (slug) root.classList.add(slug);
-  root.innerHTML = `<div class="stage"></div><p class="options"><span id="status">Loading.</span>${KEYS_MARKUP}`
-    + '<label hidden><input type="checkbox" id="sound" checked> Sound</label>'
-    + '<label hidden><input type="checkbox" id="printer" checked> Printer</label>'
-    + '<label hidden title="The game with its bugs fixed: it starts again"><input type="checkbox" id="fixed"> Bugs fixed</label>'
-    + '<label hidden>Mini view <select id="mini"><option value="">Off</option><option value="live">Live</option><option value="pictures">Pictures</option></select></label>'
+  root.innerHTML = `<div class="stage"></div><p class="options"><span id="status">Loading.</span>${KEYS_MARKUP}<span class="settings"></span>`
     + '<button id="disk" type="button" hidden>Download the disk</button></p>';
   root.append(paperBox(words.printer));
   const $ = id => root.querySelector('#' + id);
-  const stage = root.querySelector('.stage'), status = $('status'), soundBox = $('sound');
+  const stage = root.querySelector('.stage'), status = $('status'), line = root.querySelector('.options .settings');
   const fail = err => { status.textContent = 'The game stopped: ' + err.message; status.className = 'error'; console.error(err); };
+  // A setting the player or its engine acts on, by its declaration (settings.js): its value from the page's store,
+  // and its control on the options line where the page offers it, a box for a boolean, a menu for an enum, each
+  // change kept and told; `first`, before the others (the sound)
+  const setting = (def, { first = false } = {}) => {
+    const s = { value: settings.get(def), told: [], on(f) { this.told.push(f); return this; } };
+    if (!settings.offered(def)) return s;
+    const label = document.createElement('label'), choice = Array.isArray(def.type);
+    if (def.title) label.title = def.title;
+    const control = choice
+      ? Object.assign(document.createElement('select'), { innerHTML: def.type.map((v, i) => `<option value="${v}">${def.labels[i]}</option>`).join('') })
+      : Object.assign(document.createElement('input'), { type: 'checkbox' });
+    control.id = def.name;
+    if (choice) { control.value = s.value; label.append(def.words + ' ', control); } else { control.checked = s.value; label.append(control, ' ' + def.words); }
+    control.addEventListener('change', () => { s.value = choice ? control.value : control.checked; settings.set(def, s.value); for (const f of s.told) f(s.value); });
+    line[first ? 'prepend' : 'append'](label);
+    return s;
+  };
   try {
-    // ?fixed: the title with its bugs fixed, for one that has such a version (its title.js `fixed`)
-    const fixed = new URLSearchParams(location.search).has('fixed');
+    if (!disk || !settings) throw new Error('the page gives the player its disk and its settings');
+    // the title with its bugs fixed, for one that has such a version (its title.js `fixed`), a setting: its scripts
+    // chosen as it loads, so a change loads the page again
+    const fixed = settings.get(FIXED);
     const folder = options.title ? new URL(options.title) : null, data = new URL(options.data);
     // the title, and for its remake its scripts; the game's data (none here for a title of its own engine, which
     // reads its own from its folder)
@@ -82,52 +106,39 @@ export async function play(options) {
       link.dataset.title = title.slug; document.head.append(link);
       await new Promise(done => { link.onload = link.onerror = done; });
     }
-    const disk = options.disk ?? await openDisk(titleDisk(slug), { backend: options.backend });
     // (a save the disk's backend could not store, said, not lost)
     disk.failed = err => { status.textContent = 'A file was not kept: ' + err.message; status.className = 'error'; };
     const [dots, lines] = options.screen ?? title?.screen ?? SCREENS[kind] ?? SCREENS.prodos;
     fit(stage, root, dots, lines);
 
-    // a printer on device 4, for a Commodore 64 game: on unless its box is off (the choice kept in this browser),
-    // what it prints drawn below the screen as a sheet of paper, until it is torn off
-    let printer = null;
     const g = {
-      way, slug, title, scripts, game, folder, data, stage, status, fail, disk, preview, words, fixed, $,
+      way, slug, title, scripts, game, folder, data, stage, status, fail, disk, preview, words, fixed, $, setting,
       saves: game ? savesFor(game, disk) : null, roms: options.roms, studies: options.studies, mini: options.mini ?? null,
       chargen: null,   // (the engine's Commodore 64 characters, for the printer's paper)
       pace: () => { const p = options.pace; return typeof p === 'function' ? p() : p ?? 1; },
-      // an engine's own control on the options line, after the sound
-      control(html) { $('printer').parentElement.insertAdjacentHTML('beforebegin', html); },
-      // the engine's sound turned on or off by the game itself (Aztlan's Game > Sounds): the box with it
-      sounding(on) { soundBox.checked = on; },
+      // an engine's own part of the options line that is no setting (Aztlan's preview selector), after the settings
+      control(html) { line.insertAdjacentHTML('afterend', html); },
     };
+    // a printer on device 4, for a Commodore 64 game: on unless the setting is off, what it prints drawn below the
+    // screen as a sheet of paper, until it is torn off
     if (kind === 'c64') {
       const { Printer, paper } = await import('@moonbase-machines/c64/printer.js');
-      const box = $('printer'), sheet = $('paper'), shown = $('paper-box');
-      try { box.checked = localStorage.getItem('printer') !== '0'; } catch {}
-      box.parentElement.hidden = false;
-      printer = g.printer = new Printer({ on: box.checked });
-      box.addEventListener('change', () => { printer.on = box.checked; try { localStorage.setItem('printer', box.checked ? '1' : '0'); } catch {} });
+      const on = setting(PRINTER);
+      const printer = g.printer = new Printer({ on: on.value });
+      on.on(v => { printer.on = v; });
+      const sheet = $('paper'), shown = $('paper-box');
       printer.changed = () => { shown.hidden = !printer.lines.length; if (printer.lines.length) paper(sheet, printer, g.chargen); };
       $('tear').addEventListener('click', () => printer.tear());
       $('print-paper').addEventListener('click', () => window.print());   // (the sheet alone: its print style)
     }
-    // the choice of the fixed version, where there is one: the page again, with ?fixed or without
-    if (way === 'remake' && title?.fixed) {
-      const box = $('fixed');
-      box.checked = fixed; box.parentElement.hidden = false;
-      box.addEventListener('change', () => { const u = new URL(location.href); if (box.checked) u.searchParams.set('fixed', ''); else u.searchParams.delete('fixed'); location.href = u.href.replace('fixed=&', 'fixed&').replace(/fixed=$/, 'fixed'); });
-    }
+    if (way === 'remake' && title?.fixed) setting(FIXED).on(() => location.reload());
 
     const engine = way === 'original' ? await ENGINES.original() : title.own ?? await ENGINES[title.engine]();
     const handle = await engine.play(g);
     if (!handle) return;
 
-    // the sound, where the engine has it: the box as the engine starts it, and the engine told of each change
-    if (handle.sound) {
-      soundBox.parentElement.hidden = false; soundBox.checked = handle.soundOn ?? true;
-      soundBox.addEventListener('change', () => handle.sound(soundBox.checked));
-    }
+    // the sound, where the engine has it: the player's speaker, on or off
+    if (handle.sound) { const on = setting(SOUND, { first: true }); handle.sound(on.value); on.on(v => handle.sound(v)); }
     // the keys, one listener for every engine: the machine's code for each (keys.js), offered to the page first
     // (`claim`), then the engine's: the event itself where it reads the keyboard, else the code pressed
     const keyed = e => {
@@ -153,15 +164,13 @@ export async function play(options) {
     }
     // a page that follows the game: its engine, a key pressed as the player presses one, the game at full speed
     options.watch?.({ engine: handle.engine, press: k => { handle.start?.(); handle.press?.(k); }, quick: on => handle.quick?.(on) });
-    // a route the page gives, played first; then the game; then ?keys=space,space,right,return, to go straight to a
-    // scene
+    // a route the page gives, played first; then the game; then the page's keys, to go straight to a scene
     if (options.route) {
       if (!handle.route) throw new Error('a route cannot be played on the ' + way);
       await handle.route(options.route);
     }
     handle.run();
-    const start = new URLSearchParams(location.search).get('keys');
-    if (start) { const list = start.split(',').map(n => named(n, kind)); if (handle.keys) handle.keys(list); else for (const k of list) handle.press?.(k); }
+    if (options.keys?.length) { const list = options.keys.map(n => named(n, kind)); if (handle.keys) handle.keys(list); else for (const k of list) handle.press?.(k); }
   } catch (err) { fail(err); }
 }
 

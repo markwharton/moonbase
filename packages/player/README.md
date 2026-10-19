@@ -11,10 +11,17 @@ The player for Mark Wharton's titles of 1985 to 1995, one way in for every title
 The player makes its part of the page and owns it, the same for every title: the section (classes `player`, the way,
 the title's slug), the stage sized a whole number of the device's pixels to each of the screen's dots, the options
 line and the status, the keys (one listener, each machine's codes, `keys.js`), the sound, a Commodore 64's printer,
-the saves (`saves.js`), and what the page asks of it (`watch`, `claim`, `pace`, a route). An engine plays the game on
-the stage and returns its handle (`play.js` says what it may have). What a player saves goes on **the player's disk**
-(`disk/`): a title's own disk of files in this browser (IndexedDB), with its own dialogs (`disk/dialogs.js`, in a modal
-window, `modal.js`); the player opens it, on the backend the page gives. A game saved in one way loads in the other.
+the saves (`saves.js`), the settings the player and its engine act on, each declared where it acts and shown only
+there (`settings.js`), and what the page asks of it (`watch`, `claim`, `pace`, keys and a route). An engine plays
+the game on the stage and returns its handle (`play.js` says what it may have). The page tells the player everything
+and the player reads no address and keeps nothing itself: the page gives the title's disk, a virtual disk of files
+(`disk/disk.js` `openDisk`), and the person's settings, a typed store (`settings.js`: a setting is a declared name,
+type, default and owner; only a declared setting can be read or kept, its value checked). Both come from a
+**provider** (`provider.js`), which chooses once a visit where files and settings live, the backend (this browser's,
+IndexedDB; an account's, a site's own); a site makes one a page from a module of its own, giving its policy of
+settings (hidden, fixed, or a value for the visit) and the player never chooses. Nothing in the package knows of an
+address: a page that lets its address set anything reads it itself, each input by its type. The disk has its own
+dialogs (`disk/dialogs.js`, in a modal window, `modal.js`). A game saved in one way loads in the other.
 
 No title is named in it. A title is a folder of its own, kept with the title, which the page gives the player:
 
@@ -33,8 +40,12 @@ Beside it the game's data, `<name>.json` (its disks' files, its kind, and where 
 <section id="player"></section>
 <script type="module">
   import { play } from '@moonbase-machines/player/play.js';
+  import { titleDisk } from '@moonbase-machines/player/disk/disk.js';
+  import { provider } from '@moonbase-machines/player/provider.js';
+  const { disk, settings } = await provider();   // (this browser's)
   await play({ way: 'remake', slug: 'game', title: new URL('title/', location).href, data: new URL('game.json', location).href,
-    root: document.getElementById('player'), words: { printer: { line: '', print: 'Print', tear: 'Tear off' } } });
+    root: document.getElementById('player'), disk: await disk(titleDisk('game')), settings,
+    words: { printer: { line: '', print: 'Print', tear: 'Tear off' } } });
 </script>
 ```
 

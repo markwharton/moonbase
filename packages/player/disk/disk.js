@@ -8,8 +8,9 @@
 // @moonbase-machines/c64/drive.js's find), so a read is never waited for. A write changes the copy at once and is stored behind
 // it, in order.
 //
-//   const disk = await openDisk(name, { backend })   backend: local() (local.js, the default)
-//                                                     or memory() (memory.js)
+//   const disk = await openDisk(name, { backend })   backend: where its files are kept, the provider's choice
+//                                                     (provider.js), never the disk's: local() (local.js, this
+//                                                     browser's) or memory() (memory.js)
 //   disk.list()                 [{ name, size, modified, meta }], newest first
 //   disk.read(name)             its bytes, or null
 //   disk.write(name, bytes, meta)   a promise, kept when stored
@@ -24,12 +25,9 @@
 //
 // The backend is where a disk's files are kept: { kept, where, load(disk), put(disk, file), delete(disk, name) },
 // a file { name, bytes, meta, modified }. This browser's is local(); an account's will be the API's.
-import { local } from './local.js';
-import { memory } from './memory.js';
 
-export async function openDisk(name, { backend } = {}) {
-  // (a browser that keeps nothing, as a private window may: the disk in memory, and said so)
-  if (!backend) { try { backend = await local(); } catch { backend = memory({ kept: false }); } }
+export async function openDisk(name, { backend }) {
+  if (!backend) throw new Error('openDisk: a backend is the provider\'s to give (provider.js)');
   const files = new Map((await backend.load(name)).map(f => [f.name, f]));
   let queue = Promise.resolve();
   // (each job stored in turn; one that fails is said (`failed`) and the next goes on, its own promise rejected for a

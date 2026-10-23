@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.11.1] - 2026-10-24
+
+### Documentation
+
+- the remake engine's README, its scenes, compiled scripts and fixed versions (f4e59d8)
+- the four layers, the machine, the Original, the Replica and the Remake (f6a9d04)
+- what the machine was, before the four layers (950156c)
+
 ## [v0.11.0] - 2026-10-19
 
 ### Added
@@ -124,3 +132,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 [v0.9.1]: https://github.com/markwharton/moonbase/compare/v0.9.0...v0.9.1
 [v0.10.0]: https://github.com/markwharton/moonbase/compare/v0.9.1...v0.10.0
 [v0.11.0]: https://github.com/markwharton/moonbase/compare/v0.10.0...v0.11.0
+[v0.11.1]: https://github.com/markwharton/moonbase/compare/v0.11.0...v0.11.1

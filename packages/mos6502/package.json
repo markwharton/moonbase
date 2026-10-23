@@ -1,6 +1,6 @@
 {
   "name": "@moonbase-machines/mos6502",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "The 6502: its documented instructions, an assembler and a disassembler.",
   "type": "module",
   "license": "MIT",

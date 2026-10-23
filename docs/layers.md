@@ -2,7 +2,32 @@
 
 A title can run four ways. The first is the real machine. The other three are Moonbase's, and each one
 replaces a little more of the original with JavaScript. In every layer the logic is the game's own. What
-changes is what runs it.
+changes is what runs it. Before the layers, here is what the machine was.
+
+## The machine
+
+The Apple IIe and the Commodore 64 had no operating system as we'd mean one now. Each had a ROM of routines at
+fixed addresses and BASIC, and that was all.
+
+- **The ROM.** The Apple's Monitor (character out at `$FDED`, a key, a delay, the bell) and Applesoft, or the
+  Commodore 64's KERNAL, reached through its jump table at `$FFxx` (character out at `$FFD2`, a key, load, save),
+  and its BASIC V2. A program called a routine with `JSR` to its address.
+- **BASIC was the shell.** Switch the Commodore 64 on and it says READY. The Apple starts its disk drive and
+  boots the disk in it; with no disk there, Control-Reset gives Applesoft's prompt.
+- **The disk system wasn't in the machine.** On the Apple, DOS 3.3 or ProDOS was loaded from the disk into
+  ordinary RAM. ProDOS left one entry point, `$BF00`, and DOS 3.3 took its commands by watching the characters a
+  program printed, a Control-D first. On the Commodore 64, the DOS was inside the 1541 drive, which has its own
+  6502 and ROM, and the computer talked to it over a serial cable.
+- **Nothing was protected.** The 6502 has no supervisor mode, no memory protection and no processes. A program
+  could write to any address, including the screen and the hardware's registers (the Apple's switches at `$C0xx`,
+  the Commodore 64's video and sound chips at `$D000`), replace the interrupt vectors, switch the ROM out to use
+  the RAM under it, or leave BASIC and the ROM behind entirely.
+
+That's why the layers work. With nothing between the game and the hardware, a game meets the machine in only
+three ways: the 6502 itself, the memory and I/O addresses it reads and writes, and the ROM routines it calls at
+known addresses. Moonbase can stand in for each of them.
+
+## The four layers
 
 | Layer | Name | The game's code runs on | The ROM and the disk system are |
 |---|---|---|---|

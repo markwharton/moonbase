@@ -3,10 +3,13 @@
 The player for Mark Wharton's titles of 1985 to 1995, one way in for every title and every way to play it (`play.js`):
 
 - **Original** (`way: 'original'`, `engines/original.js`): the game's own disk, untouched, on Moonbase's Apple IIe or
-  Commodore 64 (`@moonbase-machines/apple2e`, `c64`), on Moonbase's own ROMs, which need nothing of Apple's or
-  Commodore's.
+  Commodore 64 (`@moonbase-machines/apple2e`, `c64`). It's the Original on the makers' ROMs, where the page gives
+  them (`roms`), and the Replica on Moonbase's own ROMs, which need nothing of Apple's or Commodore's.
 - **Remake** (`way: 'remake'`): the game's scenes, lifted from its code and compiled to JavaScript, on the remake's
   engine (`engines/scenes.js`, a title of `card` or `vector` scenes), or the title's own engine, a module in its folder.
+
+[The four layers](../../docs/layers.md) explains how the Original, the Replica and the Remake differ, and what runs
+each one.
 
 The player makes its part of the page and owns it, the same for every title: the section (classes `player`, the way,
 the title's slug), the stage sized a whole number of the device's pixels to each of the screen's dots, the options

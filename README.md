@@ -16,6 +16,9 @@ The machines Mark Wharton's titles of 1985 to 1995 run on again, in the browser 
 Each runs on Moonbase's own ROM routines and characters, so nothing of Commodore's or Apple's is
 needed or kept here. Every module opens with a comment saying what it is and what it covers.
 
+[The four layers](docs/layers.md) explains the four ways a title runs: on the real machine, then as the
+Original, the Replica and the Remake.
+
 ```js
 import { C64 } from '@moonbase-machines/c64/machine.js';
 import { CPU } from '@moonbase-machines/mos6502/cpu.js';

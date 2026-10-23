@@ -40,6 +40,15 @@ title's `map` names by address (`0x0800: 'char'`). The engine does the routine's
 event. Everything a scene does is an event: the view draws the events, and a pilot reads them as the transcript to
 hold against the original's.
 
+### Code that rewrites itself
+
+A scene is the code as text, lifted once, so it can't follow code that changes its own instructions. The 6502 does
+follow it, because it reads each instruction's bytes from memory as it runs. A routine that keeps a pointer in the
+address bytes of its own `LDA` and moves the pointer by incrementing them would be lifted as a read of one fixed
+address. Microsoft's CHRGET in 6502 BASIC is the best-known case. Such a line needs either a step, the routine
+answered in JavaScript, or a hand edit to read through the pointer instead (`a = [$007A]`, the byte at the address
+held at `$7A` and `$7B`), with the reason beside it.
+
 ## Compiled to JavaScript
 
 `moonbase-compile <title folder>` writes each scene as an ES module in `compiled/` (`compile.js`). The module's

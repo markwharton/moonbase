@@ -30,7 +30,8 @@ No title is named in it. A title is a folder of its own, kept with the title, wh
   scenes call, by address, and what its engine needs beside them: `remake/cards.js` and `remake/vector.js` say what
   each engine reads), the modules it brings (`modules`, its problems; `view`, its view's own drawing), its font's own
   glyphs (`font`), its stylesheet (`style`);
-- its scenes (`<name>.scene`) and `compiled/` (`moonbase-compile`).
+- its scenes (`<name>.scene`) and `compiled/` (`moonbase-compile`); `remake/README.md` says what a scene is, how it
+  is compiled and run, and the two engines.
 
 Beside it the game's data, `<name>.json` (its disks' files, its kind, and where it saves: `saves`).
 

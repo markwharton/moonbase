@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.12.0] - 2026-10-25
+
+### Added
+
+- each key one key of the 64's: the arrows its cursor keys, the joystick a gamepad; CLR, INST, ← and £ (028316c)
+
 ## [v0.11.1] - 2026-10-24
 
 ### Documentation
@@ -133,3 +139,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 [v0.10.0]: https://github.com/markwharton/moonbase/compare/v0.9.1...v0.10.0
 [v0.11.0]: https://github.com/markwharton/moonbase/compare/v0.10.0...v0.11.0
 [v0.11.1]: https://github.com/markwharton/moonbase/compare/v0.11.0...v0.11.1
+[v0.12.0]: https://github.com/markwharton/moonbase/compare/v0.11.1...v0.12.0

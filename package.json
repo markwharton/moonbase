@@ -1,6 +1,6 @@
 {
   "name": "moonbase",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "private": true,
   "description": "Moonbase's machines: a 6502, a Commodore 64 and an Apple IIe, for the browser and Node",
   "license": "MIT",

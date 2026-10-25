@@ -1,8 +1,7 @@
-// A Commodore 64 (machine.js) in a browser page: the keys as the C64's matrix, the arrows as the
-// joystick and the cursor keys, Escape as RUN/STOP, Control the Commodore key (and fire), Tab
-// CTRL; a gamepad (an 8BitDo, or any in the browser's standard mapping) as the joystick too; the
-// frame painted on a canvas doubled; and the machine run 50 frames a second, keeping up with the
-// clock, two frames at most at a time.
+// A Commodore 64 (machine.js) in a browser page: each key one key of the C64's matrix and nothing else, the arrows its
+// cursor keys, Escape RUN/STOP, Control the Commodore key, Tab CTRL; the joystick a gamepad plugged in (an 8BitDo, or
+// any in the browser's standard mapping), never a key; the frame painted on a canvas doubled; and the machine run 50
+// frames a second, keeping up with the clock, two frames at most at a time.
 //
 //   const keys = keyboard(m, { ignore, onKey, log, listen })   ignore(e): a key the page keeps (a pane's); listen(type,
 //                                                      f), where its keys come from (the window's, unless a player gives
@@ -10,7 +9,7 @@
 //   keys.press(column, row, frames)                    a key held for so many frames (RUN/STOP)
 //   const draw = painter(canvas)                       draw(m.vic.frame)
 //   pace(m, after)                                     the frames run; after() each animation frame
-import { MATRIX, SHIFTED, JOYSTICK, CURSOR, MODIFIERS } from './keys.js';
+import { MATRIX, SHIFTED, WITH_SHIFT, CURSOR, MODIFIERS } from './keys.js';
 import { PALETTE, WIDTH, HEIGHT } from './vic.js';
 
 const PAD_DEAD = 0.4;   // a stick pushed less far than this is at rest (the dead zone)
@@ -36,13 +35,12 @@ export function keyboard(m, { ignore = () => false, onKey = () => {}, log = fals
     onKey(e);
     if (e.metaKey || e.repeat) return;
     if (MODIFIERS[e.key]) { m.key(...MODIFIERS[e.key], true); e.preventDefault(); }
-    if (JOYSTICK[e.key]) { m.joystick |= JOYSTICK[e.key]; const cur = CURSOR[e.key]; if (cur) { if (cur[2]) m.key(1, 7, true); m.key(cur[0], cur[1], true); } e.preventDefault(); return; }
-    const letter = /^Key([A-Z])$/.exec(e.code)?.[1]?.toLowerCase();
-    const shifted = letter ? null : SHIFTED[e.key], key = letter ? MATRIX[letter] : shifted ? MATRIX[shifted] : MATRIX[e.key] || MATRIX[e.key.toLowerCase()];
+    const letter = /^Key([A-Z])$/.exec(e.code)?.[1]?.toLowerCase(), cursor = CURSOR[e.key];
+    const shifted = letter || cursor ? null : SHIFTED[e.key], key = cursor ? cursor.slice(0, 2) : letter ? MATRIX[letter] : shifted ? MATRIX[shifted] : MATRIX[e.key] || MATRIX[e.key.toLowerCase()];
     if (!key) { if (MODIFIERS[e.key]) e.preventDefault(); return; }
-    // (the left shift: a letter's graphic, a shifted sign, and shift with a function key, F2, F4, F6
-    // and F8 being shift with F1, F3, F5 and F7 on the 64)
-    if (letter ? (upper() ? e.altKey : e.shiftKey) : shifted || (e.key.length === 1 && e.key !== e.key.toLowerCase() && !/[0-9]/.test(e.key)) || (e.shiftKey && /^F[1357]$/.test(e.key))) m.key(1, 7, true);
+    // (the left shift: a letter's graphic, a shifted sign, the cursor going up or left, and Shift with a function key,
+    // Home or DEL, F2, F4, F6 and F8, CLR and INST being shift with F1, F3, F5 and F7, HOME and DEL on the 64)
+    if (cursor ? cursor[2] : letter ? (upper() ? e.altKey : e.shiftKey) : shifted || (e.key.length === 1 && e.key !== e.key.toLowerCase() && !/[0-9]/.test(e.key)) || (e.shiftKey && WITH_SHIFT.test(e.key))) m.key(1, 7, true);
     // (Control held, as the event says, the Commodore key down with the key, if Control's own
     // keydown has not put it there, and let go with it)
     const [cc, cr] = MODIFIERS.Control, cbm = e.ctrlKey && !(m.keys[cc] & 1 << cr) ? MODIFIERS.Control : null;
@@ -53,17 +51,16 @@ export function keyboard(m, { ignore = () => false, onKey = () => {}, log = fals
   });
   listen('keyup', e => {
     if (MODIFIERS[e.key]) m.key(...MODIFIERS[e.key], false);
-    if (JOYSTICK[e.key]) { m.joystick &= ~JOYSTICK[e.key]; const cur = CURSOR[e.key]; if (cur) { m.key(cur[0], cur[1], false); if (cur[2]) m.key(1, 7, false); } return; }
     const key = down.get(e.code);
     if (key) { release(key, true); if (withCbm.delete(e.code)) release(MODIFIERS.Control, false); down.delete(e.code); } else m.key(1, 7, false);
   });
   // the page left (another window, another tab, Cmd-Tab): the browser sends no keyup for what was
-  // held, so everything is let go, the keys, the joystick and fire, or a key (CTRL by Tab, Shift's
-  // fire) would stay down and every key after it be read wrongly
+  // held, so everything is let go, the keys, the joystick and fire, or a key (CTRL by Tab) would stay
+  // down and every key after it be read wrongly
   const letGo = () => { m.keys.fill(0); m.joystick = 0; down.clear(); held.length = 0; pressed.clear(); withCbm.clear(); padBits = 0; padStop = false; };
   // a gamepad, read each frame in the browser's standard mapping: the D-pad or the left stick
-  // (pushed past PAD_DEAD) the joystick in port 2, A or B its fire, Start RUN/STOP; added to what
-  // the keys hold, and let go with the pad
+  // (pushed past PAD_DEAD) the joystick in port 2, A or B its fire, Start RUN/STOP; let go with the
+  // pad
   let padBits = 0, padStop = false;
   const readPads = () => {
     if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') return;

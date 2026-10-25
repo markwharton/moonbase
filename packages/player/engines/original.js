@@ -96,7 +96,7 @@ return {
 // A C64 game: on moonbase's own ROMs (@moonbase-machines/c64/rom.js), as the site has it everywhere, or on
 // Commodore's where the page gives them (`roms`) and asks for them; the machine autostarted
 // with LOAD"name",8,1, and RUN for a BASIC program, typed into the KERNAL's buffer, the frame on a canvas of
-// 384 by 272 doubled, the keys as the matrix and the arrows as the joystick.
+// 384 by 272 doubled, the keys as the matrix, the arrows its cursor keys, and a gamepad the joystick.
 async function c64(g, { canvas, layer, speaker }) {
   const { game, saves, roms: makers, studies, status, printer } = g;
   const [{ C64 }, { keyboard, painter }, { SID }, { c64Roms, typed: startTyped }, { add }] = await Promise.all([

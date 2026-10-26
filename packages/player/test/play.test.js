@@ -9,7 +9,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { code, named } from '@moonbase-machines/player/keys.js';
+import { code, named, typing } from '@moonbase-machines/player/keys.js';
+import { gameData } from '@moonbase-machines/player/data.js';
 import { savesFor } from '@moonbase-machines/player/saves.js';
 import { openDisk } from '@moonbase-machines/player/disk/disk.js';
 import { memory } from '@moonbase-machines/player/disk/memory.js';
@@ -32,6 +33,24 @@ test('a key is the Apple\'s code or the Commodore 64\'s, by the machine\'s kind'
   assert.equal(code(key('Shift'), 'prodos'), undefined);
   assert.deepEqual(['space', 'left', 'A'].map(n => named(n, 'prodos')), [32, 8, 65]);
   assert.deepEqual(['left', 'delete'].map(n => named(n, 'c64')), [157, 20]);
+});
+
+test('a demonstration\'s steps as typed: the 64\'s own keys by name, its text in capitals; a step of another shape refused', () => {
+  assert.deepEqual(['f1', 'f4', 'f8', 'return', 'stop', 'clr', 'pound'].map(n => named(n, 'c64')), [133, 138, 140, 13, 3, 147, 92]);
+  assert.equal(typing([{ key: 'return' }, { key: 'f4' }, { type: '1 Pistons' }, { key: 'return' }, { key: 'f8' }], 'c64'), '\r\x8a1 PISTONS\r\x8c');
+  assert.equal(typing([{ type: 'run' }, { key: 'return' }], 'prodos'), 'run\r', 'an Apple\'s text as typed');
+  for (const [bad, kind] of [[[], 'c64'], [[{}], 'c64'], [[{ key: 'f4', type: 'x' }], 'c64'], [[{ key: 'none' }], 'c64'], [[{ type: '' }], 'c64'], [[{ press: 'a' }], 'c64'], [[{ key: 'f4' }], 'prodos'], ['f4', 'c64']])
+    assert.throws(() => typing(bad, kind), JSON.stringify(bad));
+});
+
+test('a game\'s data carries its demonstrations, each step checked; a game of another kind refused one', () => {
+  const disk = make({ name: 'DISK', id: 'MB', files: [] }), steps = [{ key: 'return' }, { key: 'f8' }];
+  const c64 = more => ({ title: 'GAME', kind: 'c64', disks: [disk], start: 'GAME', ...more });
+  assert.deepEqual(gameData('game', c64({ demonstrations: [{ name: 'Frames', steps }] })).data.demonstrations, [{ name: 'Frames', steps }]);
+  assert.equal(gameData('game', c64({})).data.demonstrations, undefined);
+  assert.throws(() => gameData('game', c64({ demonstrations: [{ name: 'Frames', steps: [{ key: 'f9' }] }] })), /no key named f9/);
+  assert.throws(() => gameData('game', c64({ demonstrations: [{ steps }] })), /has a name/);
+  assert.throws(() => gameData('game', { title: 'GAME', kind: 'dos33', disks: [], demonstrations: [{ name: 'Frames', steps }] }), /C64 game only/);
 });
 
 test('the saves: a game\'s volume given what is kept, and a change to its files kept', async () => {

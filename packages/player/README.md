@@ -36,7 +36,9 @@ No title is named in it. A title is a folder of its own, kept with the title, wh
 - its scenes (`<name>.scene`) and `compiled/` (`moonbase-compile`); `remake/README.md` says what a scene is, how it
   is compiled and run, and the two engines.
 
-Beside it the game's data, `<name>.json` (its disks' files, its kind, and where it saves: `saves`).
+Beside it the game's data, `<name>.json` (its disks' files, its kind, where it saves, `saves`, and its demonstrations,
+`demonstrations`, where its sheet has some: each a name and the steps a person types to see it, which the Original
+types into a Commodore 64 game at a button of that name; `data.js` makes the file and checks every step).
 
 ```html
 <link rel="stylesheet" href="/packages/player/player.css">

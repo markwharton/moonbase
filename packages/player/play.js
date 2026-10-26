@@ -33,19 +33,22 @@
 //     roms         the makers' ROMs this machine has (engines/original.js; a Commodore 64 remake's { chargen })
 //     studies      files of its own for a Commodore 64 game's disk, in the drive, not kept
 //     downloadDisk a Commodore 64 game's disk offered to download, with what is saved on it
+//   and, from the game's data (data.js `demonstrations`), where the engine can type them: a button for each
+//   demonstration, its name, typing its steps into the game as the keys would be; the person's first key ends it.
 //
 // An engine (engines/original.js, engines/scenes.js, or the title's own, its title.js `engine` a module in its folder)
 // exports `play(game)`: given `game`, the player's own for it (below), it declares the settings it acts on
 // (`game.setting(declaration)`, settings.js, each shown only so), makes what it draws on the stage and returns
 // its handle, or nothing where it cannot start (and has said why in the status):
 //   { run(), press(k)?, key(e, k)?, keys(list)?, route(route)?, start()?, sound(on)?, quick(on)?,
-//     engine?, diskImage()? }
+//     demonstrate(steps)?, engine?, diskImage()? }
 // run() starts it; press(k) a key, the machine's code (none for a title of its own engine with no machine's keys,
 // which reads the keyboard itself); key(e, k), for an engine that reads the keyboard itself, each
 // keydown and keyup with its code (undefined where the machine has none); keys(list), the page's `keys` at the start;
 // route, the page's route; start(), at the player's first gesture (sound may start only then); sound(on), the
 // player's speaker on or off (the Sound setting; a game's own sound setting stays the game's); quick(on) the game at
-// full speed; engine, what `watch` gives a page; diskImage(), the disk to download.
+// full speed; demonstrate(steps), a demonstration's steps typed into the game; engine, what `watch` gives a page;
+// diskImage(), the disk to download.
 import { titleOf, loadTitle, read } from './remake/load.js';
 import { savesFor } from './saves.js';
 import { code, named } from './keys.js';
@@ -161,6 +164,12 @@ export async function play(options) {
         const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([handle.diskImage()], { type: 'application/octet-stream' })), download: name + '.d64' });
         a.click(); URL.revokeObjectURL(a.href);
       });
+    }
+    // the game's demonstrations (data.js), where the engine types them: a button each, named as the data names it
+    if (handle.demonstrate) for (const d of game?.demonstrations ?? []) {
+      const button = Object.assign(document.createElement('button'), { type: 'button', textContent: d.name });
+      button.addEventListener('click', () => { handle.start?.(); handle.demonstrate(d.steps); });
+      $('disk').before(button);
     }
     // a page that follows the game: its engine, a key pressed as the player presses one, the game at full speed
     options.watch?.({ engine: handle.engine, press: k => { handle.start?.(); handle.press?.(k); }, quick: on => handle.quick?.(on) });

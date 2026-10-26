@@ -9,6 +9,7 @@
 // { choice ('commodore' or 'moonbase-petscii', @moonbase-machines/c64/start.js), load: async name => a ROM's bytes };
 // and `studies`, files of its own for a Commodore 64 game's disk, a name to its bytes in base64, in the drive, not kept.
 import { Speaker } from '../audio.js';
+import { typing as typingOf } from '../keys.js';
 
 // the setting the Apple's engine acts on (play.js `setting`): its pictures drawn as vectors over the screen
 const VECTORS = { name: 'vectors', type: 'boolean', default: false, owner: 'person', words: 'Draw the pictures as vectors' };
@@ -96,7 +97,9 @@ return {
 // A C64 game: on moonbase's own ROMs (@moonbase-machines/c64/rom.js), as the site has it everywhere, or on
 // Commodore's where the page gives them (`roms`) and asks for them; the machine autostarted
 // with LOAD"name",8,1, and RUN for a BASIC program, typed into the KERNAL's buffer, the frame on a canvas of
-// 384 by 272 doubled, the keys as the matrix, the arrows its cursor keys, and a gamepad the joystick.
+// 384 by 272 doubled, the keys as the matrix, the arrows its cursor keys, and a gamepad the joystick. A demonstration
+// (play.js `demonstrate`, the game's data's steps) is typed into the same buffer the same way, after the start, the game
+// taking each key when it asks for one; the person's first key or push of the stick drops what is left of it.
 async function c64(g, { canvas, layer, speaker }) {
   const { game, saves, roms: makers, studies, status, printer } = g;
   const [{ C64 }, { keyboard, painter }, { SID }, { c64Roms, typed: startTyped }, { add }] = await Promise.all([
@@ -115,7 +118,9 @@ async function c64(g, { canvas, layer, speaker }) {
   for (const [file, data] of Object.entries(studies ?? {})) m.drive.saved.set(file, raw(data));
   layer.style.display = 'none';
   const draw = painter(canvas);
-  let typing = null, typed = 0, sound = true;
+  let typing = null, typed = 0, sound = true, demo = null;
+  // (the person at the keys or the stick: what is left of a demonstration is theirs to stop)
+  const theirs = () => { demo = null; };
   // the keys as the 64's matrix (@moonbase-machines/c64/browser.js), given them by the player (play.js)
   const listeners = { keydown: [], keyup: [] };
   const keys = keyboard(m, { log: true, listen: (type, f) => listeners[type].push(f) });
@@ -134,9 +139,13 @@ async function c64(g, { canvas, layer, speaker }) {
       }
       m.sidWrites.length = 0;
     }
-    // (LOAD, and RUN for a BASIC program: @moonbase-machines/c64/start.js)
+    // (LOAD, and RUN for a BASIC program: @moonbase-machines/c64/start.js; then a demonstration, if one is asked for)
     if (frames >= 120 && typing === null && !typed) { typing = startTyped(m, game); typed = 1; }
-    if (typing !== null && !m.ram[0xc6]) { typing = m.type(typing); if (!typing.length) typing = null; }
+    if (demo !== null && m.joystick) theirs();
+    if (!m.ram[0xc6]) {
+      if (typing !== null) { typing = m.type(typing); if (!typing.length) typing = null; }
+      else if (demo !== null && typed) { demo = m.type(demo); if (!demo.length) demo = null; }
+    }
     draw(m.vic.frame);
     status.textContent = m.halted ? 'The game has stopped: ' + m.halted + '.' : 'Running.';
     requestAnimationFrame(frame);
@@ -144,7 +153,8 @@ async function c64(g, { canvas, layer, speaker }) {
   return {
     run() { canvas.focus(); frame(); },
     press(k) { m.type(String.fromCharCode(k)); },   // (into the KERNAL's buffer, as typed)
-    key(e) { for (const f of listeners[e.type]) f(e); },
+    key(e) { if (e.type === 'keydown' && !e.repeat) theirs(); for (const f of listeners[e.type]) f(e); },
+    demonstrate(steps) { demo = typingOf(steps, 'c64'); },
     start() { speaker.start(); },
     sound(on) { sound = on; },
     engine: m,

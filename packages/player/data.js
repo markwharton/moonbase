@@ -4,15 +4,21 @@
 // whole as well, for a machine with Apple's own ROMs, which boots them (`images`, @moonbase-machines/apple2e/disk2.js,
 // blocks.js), the data naming them.
 //
-//   const { data, images } = gameData(slug, { title, kind, disks, system, call, loads, wait, start, saves })
+//   const { data, images } = gameData(slug, { title, kind, disks, system, call, loads, wait, start, saves, demonstrations })
 //     kind      'prodos', 'dos33' or 'c64'
 //     disks     each disk image's bytes, in order (a 140K .dsk, a .2mg; a C64's .d64)
 //     saves     where the game saves, { volume, dos } (@moonbase-machines/apple2e/saves.js), if it does
+//     demonstrations
+//               what the game's own sheet has a person type to see it work, each a name and its steps, typed into the
+//               game by the player's button of that name (play.js): [{ name, steps: [{ key: 'return' }, { key: 'f4' },
+//               { type: '1 PISTONS' }, ...] }] (keys.js `typing` says what a step is); a C64 game's, whose engine types
+//               them (engines/original.js); refused for another kind
 //   data      the game's data, for <slug>.json
 //   images    an Apple game's disks, [{ name: <slug>-<n>.dsk or .2mg, bytes }]
 import { prodos } from '@moonbase-machines/apple2e/prodos-disk.js';
 import { dos33 } from '@moonbase-machines/apple2e/dos33-disk.js';
 import { read as d64 } from '@moonbase-machines/c64/d64.js';
+import { typing } from './keys.js';
 
 const b64 = bytes => Buffer.from(bytes).toString('base64');
 
@@ -35,5 +41,14 @@ export function gameData(slug, game) {
     }
   }
   if (game.saves) data.saves = game.saves;
+  if (game.demonstrations) {
+    if (game.kind !== 'c64') throw new Error(`${slug}: a demonstration is typed into a C64 game only`);
+    if (!Array.isArray(game.demonstrations)) throw new Error(`${slug}: demonstrations is a list`);
+    data.demonstrations = game.demonstrations.map(d => {
+      if (typeof d?.name !== 'string' || !d.name) throw new Error(`${slug}: a demonstration has a name`);
+      typing(d.steps, game.kind);   // (checked here, once, so that the player never meets a step it cannot type)
+      return { name: d.name, steps: d.steps };
+    });
+  }
   return { data, images };
 }

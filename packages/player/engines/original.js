@@ -10,6 +10,7 @@
 // and `studies`, files of its own for a Commodore 64 game's disk, a name to its bytes in base64, in the drive, not kept.
 import { Speaker } from '../audio.js';
 import { typing as typingOf } from '../keys.js';
+import { pace } from '@moonbase-machines/mos6502/pace.js';
 
 // the setting the Apple's engine acts on (play.js `setting`): its pictures drawn as vectors over the screen
 const VECTORS = { name: 'vectors', type: 'boolean', default: false, owner: 'person', words: 'Draw the pictures as vectors' };
@@ -69,8 +70,10 @@ const rgba = new Uint8ClampedArray(560 * 384 * 4);
 const image = new ImageData(rgba, 560, 384);
 const cols = new Uint8Array(140 * 192);
 let mode = '';
-function frame() {
-  if (!m.halted) m.runCycles(17030);   // a frame's worth of the Apple's clock, at 60 a second
+// the Apple's frames, 60 a second against the clock (@moonbase-machines/mos6502/pace.js), the screen painted each
+// animation frame
+const frame = () => { if (!m.halted) m.runCycles(17030); };   // a frame's worth of the Apple's clock
+function after() {
   const now = `text ${m.sw.text} page2 ${m.sw.page2} hires ${m.sw.hires} dhires ${m.sw.dhires}`;
   if (now !== mode) { console.log('screen:', now, 'at pc $' + m.cpu.pc.toString(16), 'cycles', m.cpu.cycles); mode = now; }
   speaker.feed(sound ? m.clicks : [], m.cpu.cycles); m.clicks.length = 0;
@@ -80,13 +83,12 @@ function frame() {
   ctx.putImageData(image, 0, 0);
   layer.style.visibility = vectors.value && !text ? 'visible' : 'hidden';
   status.textContent = m.halted ? 'The game has stopped: ' + m.halted + '.' : (m.idle > 2000 ? 'Waiting for a key.' : 'Running.');
-  requestAnimationFrame(frame);
 }
 canvas.addEventListener('pointerdown', () => canvas.focus());
 // (the keys, the Apple's codes, given by the player: play.js, keys.js)
 let sound = true;
 return {
-  run() { canvas.focus(); frame(); },
+  run() { canvas.focus(); pace(frame, 60, { after }); },
   press(k) { console.log('key', k, 'at pc $' + m.cpu.pc.toString(16)); m.press(k); },
   start() { speaker.start(); },
   sound(on) { sound = on; },
@@ -125,20 +127,20 @@ async function c64(g, { canvas, layer, speaker }) {
   const listeners = { keydown: [], keyup: [] };
   const keys = keyboard(m, { log: true, listen: (type, f) => listeners[type].push(f) });
   // once BASIC is ready, the start typed in; the KERNAL's buffer takes ten characters at a time.
-  // The C64 runs 50 frames a second, so frames are run to keep up with the clock, two at most.
-  let frames = 0, sid = null, started = performance.now();
-  function frame() {
-    const due = Math.min(2, Math.floor((performance.now() - started) / 20) - frames);
-    for (let i = 0; i < due; i++) {
-      m.runFrame(); frames++; keys.frame();
-      if (speaker.node && sound) {
-        if (!sid) sid = new SID(speaker.rate);
-        const n = Math.round(19656 / 985248 * speaker.rate), first = m.cpu.cycles - 19656;
-        const wave = sid.render(n, m.sidWrites.map(([c, r, v]) => [Math.floor((c - first) / 19656 * n), r, v]));
-        speaker.node.port.postMessage(wave, [wave.buffer]);
-      }
-      m.sidWrites.length = 0;
+  // The C64 runs 50 frames a second against the clock (@moonbase-machines/mos6502/pace.js: a hitch caught up, a pause
+  // dropped), the SID's frame rendered with each, and the screen painted each animation frame
+  let frames = 0, sid = null;
+  const frame = n => {
+    frames = n; m.runFrame(); keys.frame();
+    if (speaker.node && sound) {
+      if (!sid) sid = new SID(speaker.rate);
+      const n = Math.round(19656 / 985248 * speaker.rate), first = m.cpu.cycles - 19656;
+      const wave = sid.render(n, m.sidWrites.map(([c, r, v]) => [Math.floor((c - first) / 19656 * n), r, v]));
+      speaker.node.port.postMessage(wave, [wave.buffer]);
     }
+    m.sidWrites.length = 0;
+  };
+  function after() {
     // (LOAD, and RUN for a BASIC program: @moonbase-machines/c64/start.js; then a demonstration, if one is asked for)
     if (frames >= 120 && typing === null && !typed) { typing = startTyped(m, game); typed = 1; }
     if (demo !== null && m.joystick) theirs();
@@ -148,10 +150,9 @@ async function c64(g, { canvas, layer, speaker }) {
     }
     draw(m.vic.frame);
     status.textContent = m.halted ? 'The game has stopped: ' + m.halted + '.' : 'Running.';
-    requestAnimationFrame(frame);
   }
   return {
-    run() { canvas.focus(); frame(); },
+    run() { canvas.focus(); pace(frame, 50, { after }); },
     press(k) { m.type(String.fromCharCode(k)); },   // (into the KERNAL's buffer, as typed)
     key(e) { if (e.type === 'keydown' && !e.repeat) theirs(); for (const f of listeners[e.type]) f(e); },
     demonstrate(steps) { demo = typingOf(steps, 'c64'); },

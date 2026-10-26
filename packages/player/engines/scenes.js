@@ -157,7 +157,11 @@ export async function play(g) {
       }
       if (speaker?.node && sounding) {
         sid ??= new SID(speaker.rate); from ??= performance.now();
-        const n = Math.floor((performance.now() - from) / 1000 * speaker.rate) - sent;
+        // (a quarter of a second at most: after a pause, a tab in the background, the sound goes on from now, not from
+        // where it stopped, and no wave the length of the pause is made)
+        let n = Math.floor((performance.now() - from) / 1000 * speaker.rate) - sent;
+        const most = Math.floor(speaker.rate / 4);
+        if (n > most) { sent += n - most; n = most; }
         if (n > 0) { const wave = sid.render(n, engine.sid.map(([, r, v]) => [0, r, v])); sent += n; speaker.node.port.postMessage(wave, [wave.buffer]); }
       }
       engine.sid.length = 0;

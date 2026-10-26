@@ -1,17 +1,25 @@
 // The speaker. The Apple II makes sound by clicking the speaker, a toggle at $C030, and the
 // machine keeps the cycle of each click. `Speaker` turns a run of cycles into a square wave
 // at the sound card's rate and plays it through a worklet, which keeps a queue of what it has
-// been given and holds the last level when the queue runs dry.
+// been given and holds the last level when the queue runs dry. The queue keeps a quarter of a
+// second at most, the oldest dropped: sound made faster than it plays (a machine catching up a
+// hitch, a pause in a hidden tab) would otherwise put the sound behind the picture for good.
 const CYCLES_PER_SECOND = 1020484;
 
 const WORKLET = `
 class SpeakerProcessor extends AudioWorkletProcessor {
-  constructor() { super(); this.queue = []; this.at = 0; this.level = 0; this.port.onmessage = e => this.queue.push(e.data); }
+  constructor() {
+    super(); this.queue = []; this.at = 0; this.level = 0; this.queued = 0;
+    this.port.onmessage = e => {
+      this.queue.push(e.data); this.queued += e.data.length;
+      while (this.queued > sampleRate / 4 && this.queue.length > 1) { this.queued -= this.queue[0].length - this.at; this.queue.shift(); this.at = 0; }
+    };
+  }
   process(inputs, outputs) {
     const out = outputs[0][0];
     for (let i = 0; i < out.length; i++) {
       while (this.queue.length && this.at >= this.queue[0].length) { this.queue.shift(); this.at = 0; }
-      if (this.queue.length) this.level = this.queue[0][this.at++];
+      if (this.queue.length) { this.level = this.queue[0][this.at++]; this.queued--; }
       out[i] = this.level;
     }
     return true;

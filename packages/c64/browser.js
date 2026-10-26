@@ -1,15 +1,17 @@
 // A Commodore 64 (machine.js) in a browser page: each key one key of the C64's matrix and nothing else, the arrows its
 // cursor keys, Escape RUN/STOP, Control the Commodore key, Tab CTRL; the joystick a gamepad plugged in (an 8BitDo, or
 // any in the browser's standard mapping), never a key; the frame painted on a canvas doubled; and the machine run 50
-// frames a second, keeping up with the clock, two frames at most at a time.
+// frames a second against the clock, a hitch caught up and a pause dropped (@moonbase-machines/mos6502/pace.js).
 //
 //   const keys = keyboard(m, { ignore, onKey, log, listen })   ignore(e): a key the page keeps (a pane's); listen(type,
 //                                                      f), where its keys come from (the window's, unless a player gives
 //                                                      its own)
 //   keys.press(column, row, frames)                    a key held for so many frames (RUN/STOP)
 //   const draw = painter(canvas)                       draw(m.vic.frame)
-//   pace(m, after)                                     the frames run; after() each animation frame
+//   pace(m, after, each)                               the machine run at 50 frames a second: each(frames) after
+//                                                      each frame, after(frames) each animation frame
 import { MATRIX, SHIFTED, WITH_SHIFT, CURSOR, MODIFIERS } from './keys.js';
+import { pace as paced } from '@moonbase-machines/mos6502/pace.js';
 import { PALETTE, WIDTH, HEIGHT } from './vic.js';
 
 const PAD_DEAD = 0.4;   // a stick pushed less far than this is at rest (the dead zone)
@@ -102,14 +104,4 @@ export function painter(canvas) {
 
 // the C64's 50 frames a second, kept up with the clock (two at most at a time, so a tab left in
 // the background does not run on and on when it comes back); each(frame) after each one run
-export function pace(m, after, each = () => {}) {
-  let frames = 0;
-  const started = performance.now();
-  function tick() {
-    const due = Math.min(2, Math.floor((performance.now() - started) / 20) - frames);
-    for (let i = 0; i < due; i++) { m.runFrame(); frames++; each(frames); }
-    after(frames);
-    requestAnimationFrame(tick);
-  }
-  tick();
-}
+export const pace = (m, after, each = () => {}) => paced(n => { m.runFrame(); each(n); }, 50, { after });

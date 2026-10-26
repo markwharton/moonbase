@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.13.0] - 2026-10-26
+
+### Added
+
+- a button types a game's demonstration, declared in its data (b235123)
+
+### Fixed
+
+- a pause is dropped, not played back fast; the machines paced to the clock, the sound's queue bounded (060d601)
+
 ## [v0.12.0] - 2026-10-25
 
 ### Added
@@ -140,3 +150,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 [v0.11.0]: https://github.com/markwharton/moonbase/compare/v0.10.0...v0.11.0
 [v0.11.1]: https://github.com/markwharton/moonbase/compare/v0.11.0...v0.11.1
 [v0.12.0]: https://github.com/markwharton/moonbase/compare/v0.11.1...v0.12.0
+[v0.13.0]: https://github.com/markwharton/moonbase/compare/v0.12.0...v0.13.0

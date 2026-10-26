@@ -1,6 +1,6 @@
 {
   "name": "@moonbase-machines/player",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "The player for Mark Wharton's titles of 1985 to 1995: the Original, a game's own disk on Moonbase's machines, and the Remake, its scenes on an engine; the player's own disk of saves in the browser.",
   "type": "module",
   "license": "MIT",
@@ -14,11 +14,11 @@
     "moonbase-play": "./bin/moonbase-play.mjs"
   },
   "dependencies": {
-    "@moonbase-machines/apple2e": "0.12.0",
-    "@moonbase-machines/c64": "0.12.0",
-    "@moonbase-machines/charset": "0.12.0",
-    "@moonbase-machines/mos6502": "0.12.0",
-    "@moonbase-machines/vector": "0.12.0"
+    "@moonbase-machines/apple2e": "0.13.0",
+    "@moonbase-machines/c64": "0.13.0",
+    "@moonbase-machines/charset": "0.13.0",
+    "@moonbase-machines/mos6502": "0.13.0",
+    "@moonbase-machines/vector": "0.13.0"
   },
   "scripts": {
     "test": "node --test test/*.test.js",

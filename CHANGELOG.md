@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v0.14.0] - 2026-10-27
+
+### Added
+
+- a title's scenes compiled as the page loads them, and a BASIC program made from the disk; Blitz!'s decoder in c64 (4567750)
+
 ## [v0.13.0] - 2026-10-26
 
 ### Added
@@ -151,3 +157,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 [v0.11.1]: https://github.com/markwharton/moonbase/compare/v0.11.0...v0.11.1
 [v0.12.0]: https://github.com/markwharton/moonbase/compare/v0.11.1...v0.12.0
 [v0.13.0]: https://github.com/markwharton/moonbase/compare/v0.12.0...v0.13.0
+[v0.14.0]: https://github.com/markwharton/moonbase/compare/v0.13.0...v0.14.0

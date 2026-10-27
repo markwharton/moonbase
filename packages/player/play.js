@@ -10,7 +10,7 @@
 //                route, mini, roms, studies, downloadDisk })
 //     way          'original' or 'remake' (the default)
 //     slug         the title's name in addresses: its section's class, its disk
-//     title        the title's folder, an absolute URL (title.js, its scenes, compiled/, its own modules), where it
+//     title        the title's folder, an absolute URL (title.js, its scenes, its own modules), where it
 //                  has one; a game without one (a study) has only its data
 //     data         its game's data, an absolute URL (<name>.json: its disks' files, its kind, its saves), or for a
 //                  title of its own engine the folder its data is in

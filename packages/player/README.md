@@ -33,8 +33,8 @@ No title is named in it. A title is a folder of its own, kept with the title, wh
   scenes call, by address, and what its engine needs beside them: `remake/cards.js` and `remake/vector.js` say what
   each engine reads), the modules it brings (`modules`, its problems; `view`, its view's own drawing), its font's own
   glyphs (`font`), its stylesheet (`style`);
-- its scenes (`<name>.scene`) and `compiled/` (`moonbase-compile`); `remake/README.md` says what a scene is, how it
-  is compiled and run, and the two engines.
+- its scenes (`<name>.scene`), which the player compiles as it loads them; `remake/README.md` says what a scene is,
+  how it is compiled and run, a program the player makes from the disk instead (`basic`), and the two engines.
 
 Beside it the game's data, `<name>.json` (its disks' files, its kind, where it saves, `saves`, and its demonstrations,
 `demonstrations`, where its sheet has some: each a name and the steps a person types to see it, which the Original
@@ -55,7 +55,8 @@ types into a Commodore 64 game at a button of that name; `data.js` makes the fil
 </script>
 ```
 
-`moonbase-compile <title folder>` compiles a title's scenes; `moonbase-play [folder] [port]` serves a title's page
-on this machine (http://127.0.0.1:8002/), the packages from `node_modules`.
+`moonbase-compile <title folder>` compiles a title's scenes as the page would, to catch one that does not compile,
+and `--print` shows one's JavaScript; `moonbase-play [folder] [port]` serves a title's page on this machine
+(http://127.0.0.1:8002/), the packages from `node_modules`.
 
 Part of Moonbase (moonbase.au). MIT; see LICENSE. Each file opens with what it is and what it covers.

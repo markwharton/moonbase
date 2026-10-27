@@ -1,5 +1,5 @@
-// A scene script compiled to JavaScript: moonbase-compile writes each title's scripts as modules
-// beside them (its folder's compiled/<name>.js), and the remake runs those.
+// A scene script compiled to JavaScript, as the page loads it (load.js `loadTitle`, `instantiate`); the text of the
+// module it would be, for a look or a test (`compile`, moonbase-compile --print).
 //
 // The script's statements become JavaScript on the engine's registers, flags, stack and memory,
 // each line with the script's line beside it, so the code can be read against the original's.
@@ -164,8 +164,7 @@ export function compile(source, name, { io = [0xc000, 0xc0ff] } = {}) {
     blocks.push(`${label}    ${k}: (e, s) => {\n${body.map(l => '      ' + l).join('\n')}\n    },`);
   }
   return [
-    `// ${name}, compiled from ${name}.scene by moonbase-compile (@moonbase-machines/player/remake/compile.js): compiled`,
-    `// again from the scene, never edited`,
+    `// ${name}, compiled from ${name}.scene as the page loads it (@moonbase-machines/player/remake/compile.js)`,
     `export default {`,
     `  labels: ${JSON.stringify(labels)},`,
     `  data: [${data.map(d => `\n    [${hex(d.at, 4)}, [${d.bytes.map(b => hex(b)).join(', ')}]],`).join('')}\n  ],`,
@@ -176,4 +175,12 @@ export function compile(source, name, { io = [0xc000, 0xc0ff] } = {}) {
     `};`,
     '',
   ].join('\n');
+}
+
+// The same, as the script itself rather than its module's text: a scene compiled as it arrives, its functions made by
+// the browser's or Node's own JavaScript (as basic-compile.js makes a BASIC program's). The devtools list it as
+// moonbase-compiled/<name>.js, a source to read and step in, each line with the scene's beside it.
+export function instantiate(source, name, options) {
+  const text = compile(source, name, options);
+  return new Function('return ' + text.slice(text.indexOf('export default ') + 'export default '.length) + `\n//# sourceURL=moonbase-compiled/${name}.js`)();
 }

@@ -4,7 +4,7 @@
 // package's own provider (provider.js), this browser's, as the page has no site to give them; the page's own inputs
 // its own, each checked: ?way and ?game one of the ways it has, ?keys=space,return keys to press at the start; each
 // file sent with `Cache-Control: no-cache` so that a refresh asks for every module again. The folder holds
-// the title's folder, title/ (title.js, its scenes, compiled/), if it is remade, and its games' data, <name>.json
+// the title's folder, title/ (title.js, its scenes), if it is remade, and its games' data, <name>.json
 // each, or for a title of its own engine data/; the @moonbase-machines packages are served from node_modules at
 // /packages/, where the page's import map finds them. A folder with an index.html of its own is served as it is.
 //

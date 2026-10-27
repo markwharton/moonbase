@@ -6,6 +6,7 @@ export * as basicList from './basic-list.js';
 export * as basicLang from './basic-lang.js';
 export * as basicRom from './basic-rom.js';
 export * as basic from './basic.js';
+export * as blitz from './blitz.js';
 export * as browser from './browser.js';
 export * as d64 from './d64.js';
 export * as drive from './drive.js';

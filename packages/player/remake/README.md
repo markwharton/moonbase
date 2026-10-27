@@ -15,10 +15,13 @@ The page gives the player the title's folder (`../README.md` says what is in it)
 - `title.js`: the engine, `'card'` or `'vector'`; the scripts and the one it starts with; the files that load as
   scripts (`fileScripts`); the memory at the start; the entries other scripts jump into; and the `map`, the routines
   the scenes call, by address, each with the name of its step.
-- `<name>.scene`: the scripts, as lifted and as edited after. They are the source.
-- `compiled/<name>.js`: each scene compiled by `moonbase-compile`, which the remake runs. These are always compiled
-  again from the scene and never edited.
-- the title's own modules, where it has them: its problems (`modules`) and its view's drawing (`view`).
+- `<name>.scene`: the scripts, as lifted and as edited after. They are the source, and the player compiles each as
+  it loads it (below).
+- the title's own modules, where it has them: its problems (`modules`), its view's drawing (`view`) and its fixes
+  (`fixes`).
+
+A script that is a BASIC program on the disk, rather than 6502 lifted into a scene, has no scene: the driver says
+which file it is (`basic`), and the player makes it from the disk as it loads (A program from the disk, below).
 
 ## A scene script
 
@@ -51,8 +54,8 @@ held at `$7A` and `$7B`), with the reason beside it.
 
 ## Compiled to JavaScript
 
-`moonbase-compile <title folder>` writes each scene as an ES module in `compiled/` (`compile.js`). The module's
-default export is `{ labels, data, steps, run }`:
+The player compiles each scene as it loads it (`compile.js` `instantiate`, from `load.js` `loadTitle`), in a few
+milliseconds for a title. The script it makes is `{ labels, data, steps, run }`:
 
 - `labels`, each label's step;
 - `data`, the bytes the script puts in memory;
@@ -64,9 +67,26 @@ with the scene's line beside it as a comment. Anything that can stop the run sta
 waits where it waited: a routine's step, and a read or write that may reach the I/O page. A jump, a call or a return
 ends a function.
 
-The player loads the compiled modules with `import()` (`load.js` `loadTitle`). There is no JSON in between. The JSON
-beside the title, `<name>.json`, is the game's data: its disks' files, its kind and where it saves. `loadTitle` with
-`scenes` reads the `.scene` files instead and runs them line by line, which gives the same results more slowly.
+The devtools list each compiled script as `moonbase-compiled/<name>.js`, a source to read and step in, each line
+with the scene's beside it. `moonbase-compile <title folder>` compiles a title's scenes the same way without a
+page, to catch one that does not compile, and `moonbase-compile --print <title folder> <name>` shows one's
+JavaScript. There is no JSON in between. The JSON beside the title, `<name>.json`, is the game's data: its disks'
+files, its kind and where it saves. `loadTitle` with `interpret` runs each scene's text line by line instead, which
+gives the same results more slowly, for a tool that wants every line.
+
+## A program from the disk
+
+A Commodore 64 title's BASIC program is not lifted: the driver says which file on the disk it is, and the player
+makes the script from the disk it has as it loads (`programs.js`). BASIC's own text is read as statements
+(`@moonbase-machines/c64/basic-lang.js`), and a program compiled with Blitz! is read back from Blitz!'s code
+(`@moonbase-machines/c64/blitz.js`, `blitz: true`); either is compiled to JavaScript the same way
+(`@moonbase-machines/c64/basic-compile.js`), with BASIC's work done by `@moonbase-machines/c64/basic.js` as the
+script runs. A statement costs a Blitz! instruction's time or a BASIC line's, unless the driver gives a `cost`.
+
+```js
+scripts: ['boot', 'game', 'code'],
+basic: { boot: { program: { file: 'GOLDFIELDS', at: 0x0801 } }, game: { program: { file: 'GAME' }, blitz: true } }
+```
 
 ## The two engines
 
@@ -104,8 +124,10 @@ fixed: { game: 'game-fixed' }
 ```
 
 The player's setting **Bugs fixed** (`play.js`, `fixed`) is offered only for a title that has one. With it on,
-`loadTitle` runs `compiled/game-fixed.js` in place of `compiled/game.js`, and the page starts again when the
-setting changes. Only compiled scripts are replaced: with `scenes`, `loadTitle` runs the faithful scenes.
+`loadTitle` makes the program from the disk with the title's fixes made first (its `fixes` module, a function
+`fixed(statements, render)` that returns the statements with every fix made and stops on one that no longer fits),
+and the program takes the fixed version's name; the page starts again when the setting changes. A fixed version is a
+program from the disk: a scene's fixes are edits to the scene.
 
 Because every statement is the original's, with its address, a fix is an edit to a known line, not a guess at what
 the game meant. Make the fixed script from the faithful one by edits that each check the line they change is the
@@ -129,8 +151,9 @@ its code and written again routine for routine, playing the game's data as the o
 |---|---|
 | `engine.js` | runs the scripts: the statements on the registers, flags, stack and memory, the steps through the routines, every step an event |
 | `script.js` | reads a scene script, a step to a line |
-| `compile.js` | compiles a scene script to JavaScript (`moonbase-compile`) |
-| `load.js` | loads a title's folder, its compiled scripts or its scenes, and makes its engine |
+| `compile.js` | compiles a scene script to JavaScript, as the page loads it (and `moonbase-compile`, a check) |
+| `programs.js` | a BASIC program made from the disk, BASIC's text or Blitz!'s code, where the driver says a script is one |
+| `load.js` | loads a title's folder, its scenes compiled or its programs made, and makes its engine |
 | `events.js` | what each step is as an event, in the same words for the original and the remake |
 | `lift.js` | the lifter: a file's 6502 walked from its entries into a scene script; the card engine uses it to lift code a title's scenes miss, as it runs |
 | `card.js`, `cards.js` | the card engine's routines, and what it knows of every title it plays |
